@@ -8,7 +8,7 @@ export function MonoLabel({
   className,
 }: {
   children: ReactNode;
-  as?: "span" | "div" | "p";
+  as?: "span" | "div" | "p" | "h2" | "h3";
   className?: string;
 }) {
   return <As className={[styles.label, className].filter(Boolean).join(" ")}>{children}</As>;

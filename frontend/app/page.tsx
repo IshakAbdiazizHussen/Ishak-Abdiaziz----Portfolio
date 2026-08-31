@@ -1,21 +1,24 @@
+import type { Metadata } from "next";
 import { Container } from "@/components/Container";
-import { PageHeader } from "@/components/PageHeader";
-import { Prose } from "@/components/Prose";
+import { Hero } from "@/components/Hero";
+import { Marquee } from "@/components/Marquee";
+import { MonoLabel } from "@/components/MonoLabel";
+import { intro } from "@/content/intro";
+
+export const metadata: Metadata = {
+  description: intro.subheadline,
+  openGraph: {
+    title: "Ishak Abdiaziz — Software & AI Engineer",
+    description: intro.subheadline,
+  },
+};
 
 export default function Home() {
   return (
     <Container>
-      <PageHeader
-        kicker="Intro"
-        title="I build AI systems, then try to break them before anyone else does."
-        intro="Software and AI Engineer — full, working products and real ML depth."
-      />
-      <Prose>
-        <p>
-          Placeholder. The hero (photo, headline, animated tech-stack marquee) is built in feature
-          7.
-        </p>
-      </Prose>
+      <Hero />
+      <MonoLabel as="div">{"// stack"}</MonoLabel>
+      <Marquee items={intro.marquee} />
     </Container>
   );
 }

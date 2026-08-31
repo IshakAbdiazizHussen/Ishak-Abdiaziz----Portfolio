@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/Container";
 import { PageHeader } from "@/components/PageHeader";
-import { Prose } from "@/components/Prose";
+import { ProjectCard } from "@/components/ProjectCard";
+import { projects } from "@/content/projects";
 
-export const metadata: Metadata = { title: "Built" };
+export const metadata: Metadata = {
+  title: "Built",
+  description:
+    "Two deployed projects — a PyTorch image classifier with production guardrails, and " +
+    "a self-correcting LangGraph web research agent.",
+};
 
 export default function BuiltPage() {
   return (
@@ -11,11 +17,11 @@ export default function BuiltPage() {
       <PageHeader
         kicker="Built"
         title="Built"
-        intro="Two deployed projects, each told as one hard technical decision."
+        intro="Two real, deployed projects. Each one told through a single hard technical decision."
       />
-      <Prose>
-        <p>Placeholder. This page is built in feature 7.</p>
-      </Prose>
+      {projects.map((project, i) => (
+        <ProjectCard key={project.slug} project={project} index={i + 1} />
+      ))}
     </Container>
   );
 }

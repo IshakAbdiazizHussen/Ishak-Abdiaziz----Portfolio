@@ -1,0 +1,93 @@
+.wrap {
+  margin-block: var(--space-lg);
+}
+
+.marquee {
+  position: relative;
+  overflow: hidden;
+  padding-block: var(--space-sm);
+  border-block: var(--border-width) solid var(--border);
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 5rem,
+    #000 calc(100% - 5rem),
+    transparent
+  );
+  mask-image: linear-gradient(90deg, transparent, #000 5rem, #000 calc(100% - 5rem), transparent);
+}
+
+/* No flex gap — spacing lives in .item::before so the track width is exactly
+   2x the content and translateX(-50%) loops seamlessly. */
+.track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 42s linear infinite;
+}
+
+.marquee:hover .track,
+.marquee:focus-within .track {
+  animation-play-state: paused;
+}
+
+.item {
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-sm);
+  letter-spacing: 0.02em;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.item::before {
+  content: "·";
+  margin-inline: var(--space-md);
+  color: var(--border-strong);
+}
+
+@keyframes marquee-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.list {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee {
+    display: none;
+  }
+
+  .list {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs) var(--space-md);
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding-block: var(--space-sm);
+    overflow: visible;
+    clip: auto;
+    clip-path: none;
+    white-space: normal;
+    list-style: none;
+    border-block: var(--border-width) solid var(--border);
+  }
+
+  .list li {
+    font-family: var(--font-mono-stack);
+    font-size: var(--text-sm);
+    color: var(--text-faint);
+  }
+}
