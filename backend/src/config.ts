@@ -55,6 +55,15 @@ const schema = z.object({
   // --- CORS (required) ---
   CORS_ALLOWED_ORIGINS: csv,
 
+  // --- Log-list cache ---
+  LOG_CACHE_TTL_SECONDS: z.coerce.number().int().positive().max(600).default(45),
+
+  // --- Image storage (required — the upload endpoint needs it) ---
+  BLOB_READ_WRITE_TOKEN: z.string().min(1, "BLOB_READ_WRITE_TOKEN is required"),
+  // Hosts allowed in a stored image_url. A bare host also matches its subdomains
+  // (Vercel Blob serves from <id>.public.blob.vercel-storage.com).
+  BLOB_ALLOWED_HOSTS: csv.default("blob.vercel-storage.com"),
+
   // --- Email / contact form (feature 4 — optional until wired) ---
   RESEND_API_KEY: z.string().optional(),
   CONTACT_TO_EMAIL: z.string().email().optional(),

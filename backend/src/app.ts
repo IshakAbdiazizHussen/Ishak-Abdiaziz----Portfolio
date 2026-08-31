@@ -9,6 +9,7 @@ import { pingRedis } from "./lib/redis";
 import { corsMiddleware } from "./middleware/cors";
 import { notFound, errorHandler } from "./middleware/errorHandler";
 import { adminRouter } from "./routes/admin";
+import { logRouter } from "./routes/log";
 
 export function createApp(): Express {
   const app = express();
@@ -42,7 +43,7 @@ export function createApp(): Express {
   });
 
   app.use("/api/admin", adminRouter);
-  // app.use("/api/log", logRouter);          // feature 3
+  app.use("/api/log", logRouter);
 
   app.use(notFound);
   app.use(errorHandler);
