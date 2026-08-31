@@ -8,6 +8,7 @@ import { pingDb } from "./lib/db";
 import { pingRedis } from "./lib/redis";
 import { corsMiddleware } from "./middleware/cors";
 import { notFound, errorHandler } from "./middleware/errorHandler";
+import { adminRouter } from "./routes/admin";
 
 export function createApp(): Express {
   const app = express();
@@ -40,9 +41,8 @@ export function createApp(): Express {
     res.status(ok ? 200 : 503).json({ ok, postgres: db, redis: cache });
   });
 
-  // Feature routers are mounted here as they are built:
-  //   app.use("/api/admin", adminRouter);   // feature 2
-  //   app.use("/api/log", logRouter);       // feature 3
+  app.use("/api/admin", adminRouter);
+  // app.use("/api/log", logRouter);          // feature 3
 
   app.use(notFound);
   app.use(errorHandler);
