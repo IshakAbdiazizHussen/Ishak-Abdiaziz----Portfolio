@@ -1,0 +1,40 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  max-width: 22rem;
+}
+
+.form label {
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-xs);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.form input {
+  padding: var(--space-2xs) var(--space-xs);
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-base);
+  color: var(--text);
+  background: var(--bg-inset);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius);
+}
+
+.form input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+.form button {
+  margin-top: var(--space-2xs);
+  align-self: flex-start;
+}
+
+.error {
+  font-size: var(--text-sm);
+  color: var(--danger);
+}

@@ -1,0 +1,23 @@
+.notice {
+  padding-block: var(--space-lg);
+  color: var(--text-faint);
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-sm);
+}
+
+.retry {
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-sm);
+  color: var(--accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-lg);
+}
