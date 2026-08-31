@@ -45,6 +45,14 @@ export default function nextConfig(phase: string): NextConfig {
     agentRules: false,
     // Pin the workspace root so Turbopack doesn't walk up to an unrelated lockfile.
     turbopack: { root: projectRoot },
+    // Log entry images live in Vercel Blob. (Swap for your Cloudinary host if
+    // you use that instead — must also match the CSP img-src in buildCsp.)
+    images: {
+      remotePatterns: [
+        { protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/**" },
+        { protocol: "https", hostname: "*.blob.vercel-storage.com", pathname: "/**" },
+      ],
+    },
     async headers() {
       return [
         {

@@ -1,0 +1,6 @@
+.notice {
+  padding-block: var(--space-lg);
+  color: var(--text-faint);
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-sm);
+}
