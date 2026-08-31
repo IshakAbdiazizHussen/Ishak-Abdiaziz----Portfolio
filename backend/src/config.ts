@@ -64,10 +64,10 @@ const schema = z.object({
   // (Vercel Blob serves from <id>.public.blob.vercel-storage.com).
   BLOB_ALLOWED_HOSTS: csv.default("blob.vercel-storage.com"),
 
-  // --- Email / contact form (feature 4 — optional until wired) ---
-  RESEND_API_KEY: z.string().optional(),
-  CONTACT_TO_EMAIL: z.string().email().optional(),
-  CONTACT_FROM_EMAIL: z.string().email().optional(),
+  // --- Email / contact form (required) ---
+  RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
+  CONTACT_TO_EMAIL: z.string().email(),
+  CONTACT_FROM_EMAIL: z.string().email(),
 });
 
 export type Config = z.infer<typeof schema>;

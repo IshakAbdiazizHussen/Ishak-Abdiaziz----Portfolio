@@ -7,6 +7,20 @@ export const notFound: RequestHandler = (_req, res) => {
   res.status(404).json({ error: "Not found" });
 };
 
+interface HttpErrorLike {
+  status: number;
+  type?: string;
+}
+
+function isHttpError(err: unknown): err is HttpErrorLike {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "status" in err &&
+    typeof (err as { status: unknown }).status === "number"
+  );
+}
+
 /**
  * Single central error handler. Handlers throw `AppError` (or call `next(err)`)
  * and never format their own 5xx bodies.
@@ -28,6 +42,16 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
       logger.warn({ msg: err.message, status: err.status, path: req.path }, "request rejected");
     }
     res.status(err.status).json({ error: err.expose ? err.message : "Service unavailable" });
+    return;
+  }
+
+  // http-errors style (e.g. express.json body-parser: payload too large,
+  // malformed JSON). These carry a numeric status + `expose` flag.
+  if (isHttpError(err) && err.status >= 400 && err.status < 500) {
+    logger.warn({ status: err.status, type: err.type, path: req.path }, "request rejected");
+    res.status(err.status).json({
+      error: err.status === 413 ? "Request body too large" : "Invalid request body",
+    });
     return;
   }
 

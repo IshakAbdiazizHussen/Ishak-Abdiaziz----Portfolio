@@ -44,8 +44,8 @@ Check it: `curl -s localhost:4000/health` → `{"ok":true,"postgres":true,"redis
 Every variable is documented in `.env.example`. Policy:
 
 - **Missing / malformed required config → the process exits at startup.** Required:
-  `DATABASE_URL`, `REDIS_URL`, `ADMIN_PASSWORD`, `SESSION_SECRET`, `CORS_ALLOWED_ORIGINS`
-  (and `BLOB_READ_WRITE_TOKEN` once the upload endpoint is in use).
+  `DATABASE_URL`, `REDIS_URL`, `ADMIN_PASSWORD`, `SESSION_SECRET`, `CORS_ALLOWED_ORIGINS`,
+  `BLOB_READ_WRITE_TOKEN`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL`.
 - **Present-but-unreachable Postgres/Redis → the server still starts**; `GET /health`
   returns `503` with per-dependency status and recovers on its own when the dependency
   comes back.

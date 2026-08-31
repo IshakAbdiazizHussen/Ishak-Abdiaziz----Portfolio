@@ -10,6 +10,7 @@ import { corsMiddleware } from "./middleware/cors";
 import { notFound, errorHandler } from "./middleware/errorHandler";
 import { adminRouter } from "./routes/admin";
 import { logRouter } from "./routes/log";
+import { contactRouter } from "./routes/contact";
 
 export function createApp(): Express {
   const app = express();
@@ -44,6 +45,7 @@ export function createApp(): Express {
 
   app.use("/api/admin", adminRouter);
   app.use("/api/log", logRouter);
+  app.use("/api/contact", contactRouter);
 
   app.use(notFound);
   app.use(errorHandler);
