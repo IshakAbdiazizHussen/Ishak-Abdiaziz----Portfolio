@@ -1,9 +1,71 @@
 /*
- * Minimal baseline only. The full design system — color tokens, spacing scale,
- * type scale, motion primitives — arrives in feature 6.
+ * Design tokens + baseline. Dark-mode-first, one accent, sans body + mono for
+ * code/stats/labels, sharp edges, generous whitespace. Components read these
+ * tokens only — no hardcoded colors or magic numbers in component CSS.
  */
 
 :root {
+  /* ---- color: surfaces ---- */
+  --bg: #0b0b0c;
+  --bg-raised: #141416;
+  --bg-inset: #1b1b1e;
+
+  /* ---- color: lines ---- */
+  --border: #2a2a2e;
+  --border-strong: #3b3b42;
+
+  /* ---- color: text tiers ---- */
+  --text: #ededef;
+  --text-dim: #a2a2ab;
+  --text-faint: #74747d;
+
+  /* ---- color: the one accent ---- */
+  --accent: #5cc8ff;
+  --accent-hover: #8ad8ff;
+  --accent-contrast: #05131c;
+
+  --danger: #ff8080;
+
+  /* ---- type ---- */
+  --font-sans-stack: var(--font-sans), system-ui, -apple-system, sans-serif;
+  --font-mono-stack: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.375rem;
+  --text-xl: 1.875rem;
+  --text-2xl: 2.5rem;
+  --text-3xl: 3.25rem;
+  --leading-tight: 1.2;
+  --leading-snug: 1.4;
+  --leading-normal: 1.65;
+  --tracking-label: 0.08em;
+
+  /* ---- space ---- */
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2.5rem;
+  --space-xl: 4rem;
+  --space-2xl: 6rem;
+
+  /* ---- shape (sharp) ---- */
+  --radius: 2px;
+  --border-width: 1px;
+
+  /* ---- layout ---- */
+  --width-page: 64rem;
+  --width-prose: 42rem;
+  --page-pad: clamp(1.25rem, 5vw, 2.5rem);
+
+  /* ---- motion (minimal, purposeful) ---- */
+  --motion-duration: 380ms;
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-distance: 12px;
+
   color-scheme: dark;
 }
 
@@ -13,6 +75,10 @@
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 html,
 body {
   margin: 0;
@@ -20,15 +86,30 @@ body {
 }
 
 body {
-  font-family:
-    var(--font-sans),
-    system-ui,
-    -apple-system,
-    sans-serif;
-  background: #0b0b0c;
-  color: #e7e7e9;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans-stack);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 600;
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
+}
+
+p {
+  margin: 0;
 }
 
 a {
@@ -40,5 +121,101 @@ code,
 kbd,
 samp,
 pre {
-  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono-stack);
+  font-size: 0.9em;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* ---- shell ---- */
+.site-main {
+  flex: 1;
+  padding-block: var(--space-lg) 0;
+}
+
+/* ---- small global utilities (token-driven) ---- */
+.inline-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.inline-link:hover {
+  color: var(--accent-hover);
+}
+
+.button {
+  display: inline-block;
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--space-2xs) var(--space-md);
+  cursor: pointer;
+}
+.button:hover {
+  background: var(--accent-hover);
+}
+
+.button-ghost {
+  display: inline-block;
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  background: transparent;
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: var(--space-2xs) var(--space-md);
+  cursor: pointer;
+}
+.button-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--space-sm);
+  top: var(--space-sm);
+  z-index: 100;
+  padding: var(--space-2xs) var(--space-sm);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font: 500 var(--text-sm) / 1 var(--font-mono-stack);
+  transform: translateY(-160%);
+  transition: transform 120ms ease;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

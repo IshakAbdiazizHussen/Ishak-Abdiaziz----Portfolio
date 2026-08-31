@@ -1,0 +1,11 @@
+.tag {
+  display: inline-block;
+  padding: 0.2em 0.55em;
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-xs);
+  letter-spacing: 0.03em;
+  color: var(--text-dim);
+  background: var(--bg-raised);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+}

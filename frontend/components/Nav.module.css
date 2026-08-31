@@ -1,0 +1,106 @@
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--bg-raised) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: var(--border-width) solid var(--border);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  max-width: var(--width-page);
+  margin-inline: auto;
+  padding: var(--space-xs) var(--page-pad);
+}
+
+.brand {
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.brandMark {
+  color: var(--accent);
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-left: auto;
+}
+
+.link {
+  padding: var(--space-2xs);
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-xs);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  border-bottom: 1px solid transparent;
+  transition:
+    color 120ms ease,
+    border-color 120ms ease;
+}
+
+.link:hover {
+  color: var(--text-dim);
+}
+
+.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+.toggle {
+  display: none;
+  margin-left: auto;
+  padding: var(--space-2xs) var(--space-xs);
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-xs);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: transparent;
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .toggle {
+    display: inline-block;
+  }
+
+  .links {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    margin: 0;
+    background: var(--bg-raised);
+    border-bottom: var(--border-width) solid var(--border);
+  }
+
+  .linksOpen {
+    display: flex;
+  }
+
+  .link {
+    padding: var(--space-sm) var(--page-pad);
+    border-bottom: var(--border-width) solid var(--border);
+  }
+
+  .link:last-child {
+    border-bottom: none;
+  }
+}
