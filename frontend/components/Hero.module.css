@@ -22,14 +22,14 @@
 
 .headline {
   margin: 0;
-  max-width: 20ch;
-  /* One sentence, wraps naturally; `.tail` keeps the closing phrase together. */
-  font-size: clamp(1.5rem, 0.6rem + 3.4vw, 3rem);
+  max-width: 26ch;
+  /* One sentence; a hard break after "before" (see the markup). The head wraps
+     naturally above that break; `.tail` stays on one line. */
+  font-size: clamp(1.5rem, 0.7rem + 2.7vw, 2.5rem);
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.12;
   letter-spacing: -0.015em;
   color: var(--text);
-  text-wrap: pretty;
   overflow-wrap: break-word;
 }
 

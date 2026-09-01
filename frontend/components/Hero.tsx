@@ -10,7 +10,9 @@ export function Hero() {
         <div className={styles.body}>
           <p className={styles.kicker}>{intro.kicker}</p>
           <h1 className={styles.headline}>
-            {intro.headlineHead} <span className={styles.tail}>{intro.headlineTail}</span>
+            {intro.headlineHead}
+            <br />
+            <span className={styles.tail}>{intro.headlineTail}</span>
           </h1>
         </div>
         {/* Right column — reserved for a hero image. */}
