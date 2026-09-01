@@ -37,25 +37,31 @@ export function Nav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
+  const innerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef(new Map<string, HTMLAnchorElement>());
   const indicatorRef = useRef<HTMLSpanElement>(null);
 
   // Static — tracks only the current page's link, not hover/focus. It moves
   // only when `pathname` actually changes (i.e. a menu item was clicked).
+  // Positioned against the whole nav bar (`.inner`) so it pins to the bar's
+  // bottom edge, not to the links row which floats higher up.
   useEffect(() => {
     const indicator = indicatorRef.current;
-    if (!indicator) return;
+    const inner = innerRef.current;
+    if (!indicator || !inner) return;
 
     function place() {
       const target = itemRefs.current.get(pathname);
-      if (!indicator) return;
+      if (!indicator || !inner) return;
       if (!target) {
         indicator.style.opacity = "0";
         return;
       }
+      const t = target.getBoundingClientRect();
+      const i = inner.getBoundingClientRect();
       indicator.style.opacity = "1";
-      indicator.style.width = `${target.offsetWidth}px`;
-      indicator.style.transform = `translateX(${target.offsetLeft}px)`;
+      indicator.style.width = `${t.width}px`;
+      indicator.style.transform = `translateX(${t.left - i.left}px)`;
     }
 
     place();
@@ -66,7 +72,7 @@ export function Nav() {
 
   return (
     <header className={styles.bar}>
-      <div className={styles.inner}>
+      <div className={styles.inner} ref={innerRef}>
         <Link href="/" className={styles.brand} aria-label="eng.portfolio — home">
           <span className={styles.mark} aria-hidden="true" />
           eng.portfolio
@@ -106,7 +112,6 @@ export function Nav() {
                 </Link>
               );
             })}
-            <span ref={indicatorRef} className={styles.indicator} aria-hidden="true" />
           </nav>
 
           {/* TODO: wire to a real light-mode toggle. Look-only for now. */}
@@ -114,6 +119,9 @@ export function Nav() {
             <SunIcon />
           </button>
         </div>
+
+        {/* Pinned to the bottom edge of the nav bar; position/width set in JS. */}
+        <span ref={indicatorRef} className={styles.indicator} aria-hidden="true" />
       </div>
     </header>
   );
