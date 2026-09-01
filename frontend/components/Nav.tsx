@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./Nav.module.css";
 
 const LINKS = [
@@ -36,6 +36,35 @@ function SunIcon() {
 export function Nav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  // Href the sliding indicator should sit under: whatever's hovered/focused,
+  // falling back to the current page's link.
+  const [tracked, setTracked] = useState<string | null>(null);
+
+  const itemRefs = useRef(new Map<string, HTMLAnchorElement>());
+  const indicatorRef = useRef<HTMLSpanElement>(null);
+  const targetHref = tracked ?? pathname;
+
+  useEffect(() => {
+    const indicator = indicatorRef.current;
+    if (!indicator) return;
+
+    function place() {
+      const target = itemRefs.current.get(targetHref);
+      if (!indicator) return;
+      if (!target) {
+        indicator.style.opacity = "0";
+        return;
+      }
+      indicator.style.opacity = "1";
+      indicator.style.width = `${target.offsetWidth}px`;
+      indicator.style.transform = `translateX(${target.offsetLeft}px)`;
+    }
+
+    place();
+    // Link widths can shift on resize (wrapping breakpoint, font load).
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, [targetHref]);
 
   return (
     <header className={styles.bar}>
@@ -60,6 +89,7 @@ export function Nav() {
             id="primary-nav"
             aria-label="Primary"
             className={[styles.links, open ? styles.linksOpen : ""].filter(Boolean).join(" ")}
+            onMouseLeave={() => setTracked(null)}
           >
             {LINKS.map((link) => {
               const active = pathname === link.href;
@@ -67,14 +97,22 @@ export function Nav() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  ref={(el) => {
+                    if (el) itemRefs.current.set(link.href, el);
+                    else itemRefs.current.delete(link.href);
+                  }}
                   aria-current={active ? "page" : undefined}
                   onClick={() => setOpen(false)}
+                  onMouseEnter={() => setTracked(link.href)}
+                  onFocus={() => setTracked(link.href)}
+                  onBlur={() => setTracked(null)}
                   className={[styles.link, active ? styles.active : ""].filter(Boolean).join(" ")}
                 >
                   {link.label}
                 </Link>
               );
             })}
+            <span ref={indicatorRef} className={styles.indicator} aria-hidden="true" />
           </nav>
 
           {/* TODO: wire to a real light-mode toggle. Look-only for now. */}

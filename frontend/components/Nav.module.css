@@ -56,6 +56,7 @@
 }
 
 .links {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-md);
@@ -68,19 +69,42 @@
   line-height: 1;
   /* Reference-matched — a touch lighter than --text-dim, deliberate. */
   color: #c9c9d0;
-  border-bottom: 2px solid transparent;
-  transition:
-    color 120ms ease,
-    border-color 120ms ease;
+  transition: color 150ms ease-out;
 }
 
-.link:hover {
+.link:hover,
+.link:focus-visible {
   color: var(--text);
 }
 
-.active {
+/* Compound selector + later in the cascade so the active page's link stays
+   amber even while hovered/focused, instead of the :hover rule winning. */
+.link.active {
   color: var(--nav-accent);
-  border-bottom-color: var(--nav-accent);
+}
+
+/* One shared underline, not one per link — its position/width are measured
+   in JS from whichever link is hovered/focused (falling back to the active
+   page's link) and animated via transform/width, so it reads as a single
+   element sliding and resizing rather than separate static bars. */
+.indicator {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background: var(--nav-accent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .indicator {
+    transition:
+      transform 180ms ease-out,
+      width 180ms ease-out,
+      opacity 150ms ease-out;
+  }
 }
 
 .theme {
@@ -150,6 +174,12 @@
 
   .linksOpen {
     display: flex;
+  }
+
+  /* The sliding indicator is a horizontal-row concept; the mobile dropdown
+     uses per-item border-bottoms instead (below). */
+  .indicator {
+    display: none;
   }
 
   .link {
