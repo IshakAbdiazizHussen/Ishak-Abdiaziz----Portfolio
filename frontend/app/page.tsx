@@ -15,10 +15,13 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <Container>
+    <>
+      {/* Hero manages its own (wider) width so the copy and portrait both have room. */}
       <Hero />
-      <MonoLabel as="div">{"// stack"}</MonoLabel>
-      <Marquee items={intro.marquee} />
-    </Container>
+      <Container>
+        <MonoLabel as="div">{"// stack"}</MonoLabel>
+        <Marquee items={intro.marquee} />
+      </Container>
+    </>
   );
 }

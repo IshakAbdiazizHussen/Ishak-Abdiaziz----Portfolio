@@ -1,5 +1,23 @@
 .hero {
-  padding-block: var(--space-2xl) var(--space-xl);
+  max-width: 78rem;
+  margin-inline: auto;
+  padding: var(--space-2xl) var(--page-pad) var(--space-xl);
+
+  display: grid;
+  /* Copy column wide enough for the full-size headline; portrait column stays
+     a generous ~28rem (not squeezed). The hero itself is wider than the body
+     container so both can be full size side by side. */
+  grid-template-columns: minmax(0, 40rem) minmax(0, 28rem);
+  gap: var(--space-2xl);
+  align-items: center;
+}
+
+.body {
+  min-width: 0;
+}
+
+.media {
+  justify-self: end;
 }
 
 .kicker {
@@ -109,8 +127,21 @@
   color: var(--text-dim);
 }
 
+/* Below the point where both columns fit at full size, stack them — the copy
+   goes back to full width so the headline is never squeezed. */
+@media (max-width: 78rem) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+  }
+
+  .media {
+    justify-self: start;
+  }
+}
+
 @media (max-width: 820px) {
   .hero {
-    padding-block: var(--space-lg);
+    padding-block: var(--space-lg) var(--space-lg);
   }
 }
