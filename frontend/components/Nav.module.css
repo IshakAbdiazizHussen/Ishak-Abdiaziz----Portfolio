@@ -1,65 +1,111 @@
+/*
+ * Nav visually matched to a supplied reference: solid bar, square amber mark
+ * + mono wordmark, sans-serif Title Case links with a short accent underline
+ * on the active one, and a bordered sun-icon theme-toggle square on the far
+ * right (look-only for now — see Nav.tsx).
+ */
+
 .bar {
+  /* Reference-matched amber — deliberately NOT var(--accent) (the site's
+     cyan), scoped to just this component. */
+  --nav-accent: #f2a93b;
+
   position: sticky;
   top: 0;
   z-index: 50;
-  background: color-mix(in srgb, var(--bg-raised) 92%, transparent);
-  backdrop-filter: blur(8px);
+  background: var(--bg-raised);
   border-bottom: var(--border-width) solid var(--border);
 }
 
 .inner {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-md);
   max-width: var(--width-page);
   margin-inline: auto;
-  padding: var(--space-xs) var(--page-pad);
+  padding: 2rem var(--page-pad);
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
   font-family: var(--font-mono-stack);
-  font-size: var(--text-sm);
+  font-size: 1rem;
   font-weight: 500;
   color: var(--text);
   white-space: nowrap;
 }
 
-.brandMark {
-  color: var(--accent);
+.mark {
+  display: block;
+  width: 0.625rem;
+  height: 0.625rem;
+  background: var(--nav-accent);
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 3.5rem;
 }
 
 .links {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
-  margin-left: auto;
+  gap: var(--space-md);
 }
 
 .link {
-  padding: var(--space-2xs);
-  font-family: var(--font-mono-stack);
-  font-size: var(--text-xs);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-  border-bottom: 1px solid transparent;
+  padding-bottom: 6px;
+  font-family: var(--font-sans-stack);
+  font-size: 1rem;
+  line-height: 1;
+  /* Reference-matched — a touch lighter than --text-dim, deliberate. */
+  color: #c9c9d0;
+  border-bottom: 2px solid transparent;
   transition:
     color 120ms ease,
     border-color 120ms ease;
 }
 
 .link:hover {
-  color: var(--text-dim);
+  color: var(--text);
 }
 
 .active {
-  color: var(--text);
-  border-bottom-color: var(--accent);
+  color: var(--nav-accent);
+  border-bottom-color: var(--nav-accent);
 }
 
-.toggle {
+.theme {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  color: var(--text-dim);
+  background: transparent;
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    border-color 120ms ease;
+}
+
+.theme:hover {
+  color: var(--text);
+  border-color: var(--nav-accent);
+}
+
+.sun {
+  display: block;
+}
+
+.menuToggle {
   display: none;
-  margin-left: auto;
   padding: var(--space-2xs) var(--space-xs);
   font-family: var(--font-mono-stack);
   font-size: var(--text-xs);
@@ -72,8 +118,16 @@
   cursor: pointer;
 }
 
-@media (max-width: 760px) {
-  .toggle {
+@media (max-width: 820px) {
+  .inner {
+    position: relative;
+  }
+
+  .right {
+    gap: var(--space-sm);
+  }
+
+  .menuToggle {
     display: inline-block;
   }
 
@@ -86,7 +140,6 @@
     flex-direction: column;
     align-items: stretch;
     gap: 0;
-    margin: 0;
     background: var(--bg-raised);
     border-bottom: var(--border-width) solid var(--border);
   }
@@ -101,6 +154,10 @@
   }
 
   .link:last-child {
-    border-bottom: none;
+    border-bottom: var(--border-width) solid var(--border);
+  }
+
+  .active {
+    border-bottom-color: var(--nav-accent);
   }
 }
