@@ -25,7 +25,7 @@
   gap: var(--space-md);
   max-width: var(--width-page);
   margin-inline: auto;
-  padding: 1.75rem var(--page-pad);
+  padding: 1rem var(--page-pad);
 }
 
 .brand {
