@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Hero } from "@/components/Hero";
 import { Marquee } from "@/components/Marquee";
+import { NextTeaser } from "@/components/NextTeaser";
 import { intro } from "@/content/intro";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default function Home() {
       {/* Hero manages its own (wider) width so the copy and portrait both have room. */}
       <Hero />
       <Marquee label={intro.stackLabel} items={intro.marquee} />
+      <NextTeaser />
     </>
   );
 }

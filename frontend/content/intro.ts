@@ -26,6 +26,12 @@ export const intro = {
     "HTMX",
     "pytest",
   ],
+  next: {
+    kicker: "Next",
+    title: "Two projects, with the numbers attached",
+    sub: "Ai-image-classifier and Research-Agent — what they do, and one hard call in each.",
+    href: "/built",
+  },
 } as const;
 
 export interface HeroStat {
