@@ -49,10 +49,7 @@
 
 .right {
   display: flex;
-  /* flex-end (not center): the 40px theme button sets the row's height, and
-     the shorter links were floating mid-row, which pushed their underline up
-     inside the bar instead of near its bottom edge like the reference. */
-  align-items: flex-end;
+  align-items: center;
   gap: 3.5rem;
 }
 
