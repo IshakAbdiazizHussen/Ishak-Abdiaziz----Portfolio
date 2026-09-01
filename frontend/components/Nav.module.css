@@ -51,7 +51,11 @@
 .right {
   display: flex;
   align-items: center;
-  gap: 2.5rem;
+  /* Space between the links group and the toggle — ~2x the inter-link gap
+     (var(--space-md)), so the toggle reads as a separate control. This gap
+     only ever sits between .links and .theme; inter-link spacing lives on
+     .links and is untouched. */
+  gap: 3rem;
 }
 
 .links {
@@ -64,6 +68,7 @@
   font-family: var(--font-mono-stack);
   font-size: 1rem;
   line-height: 1;
+  white-space: nowrap;
   /* Reference-matched — a touch lighter than --text-dim, deliberate. */
   color: #c9c9d0;
   transition: color 150ms ease-out;
