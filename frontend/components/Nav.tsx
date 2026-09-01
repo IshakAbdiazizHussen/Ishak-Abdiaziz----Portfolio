@@ -36,20 +36,18 @@ function SunIcon() {
 export function Nav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  // Href the sliding indicator should sit under: whatever's hovered/focused,
-  // falling back to the current page's link.
-  const [tracked, setTracked] = useState<string | null>(null);
 
   const itemRefs = useRef(new Map<string, HTMLAnchorElement>());
   const indicatorRef = useRef<HTMLSpanElement>(null);
-  const targetHref = tracked ?? pathname;
 
+  // Static — tracks only the current page's link, not hover/focus. It moves
+  // only when `pathname` actually changes (i.e. a menu item was clicked).
   useEffect(() => {
     const indicator = indicatorRef.current;
     if (!indicator) return;
 
     function place() {
-      const target = itemRefs.current.get(targetHref);
+      const target = itemRefs.current.get(pathname);
       if (!indicator) return;
       if (!target) {
         indicator.style.opacity = "0";
@@ -64,7 +62,7 @@ export function Nav() {
     // Link widths can shift on resize (wrapping breakpoint, font load).
     window.addEventListener("resize", place);
     return () => window.removeEventListener("resize", place);
-  }, [targetHref]);
+  }, [pathname]);
 
   return (
     <header className={styles.bar}>
@@ -89,7 +87,6 @@ export function Nav() {
             id="primary-nav"
             aria-label="Primary"
             className={[styles.links, open ? styles.linksOpen : ""].filter(Boolean).join(" ")}
-            onMouseLeave={() => setTracked(null)}
           >
             {LINKS.map((link) => {
               const active = pathname === link.href;
@@ -103,9 +100,6 @@ export function Nav() {
                   }}
                   aria-current={active ? "page" : undefined}
                   onClick={() => setOpen(false)}
-                  onMouseEnter={() => setTracked(link.href)}
-                  onFocus={() => setTracked(link.href)}
-                  onBlur={() => setTracked(null)}
                   className={[styles.link, active ? styles.active : ""].filter(Boolean).join(" ")}
                 >
                   {link.label}
