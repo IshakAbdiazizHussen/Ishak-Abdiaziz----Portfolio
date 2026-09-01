@@ -47,11 +47,17 @@
 .arrow {
   flex: none;
   color: var(--accent-warm);
-  transition: transform 180ms ease;
+  animation: next-bob 1.8s ease-in-out infinite;
 }
 
-.inner:hover .arrow {
-  transform: translateY(4px);
+@keyframes next-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(7px);
+  }
 }
 
 @media (max-width: 640px) {
