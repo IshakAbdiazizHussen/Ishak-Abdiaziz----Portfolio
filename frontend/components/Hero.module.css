@@ -3,36 +3,41 @@
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
   gap: var(--space-xl);
   align-items: center;
-  padding-block: var(--space-xl) var(--space-lg);
+  padding-block: var(--space-2xl) var(--space-xl);
+}
+
+.body {
+  min-width: 0;
 }
 
 .kicker {
-  margin-bottom: var(--space-md);
+  margin: 0 0 var(--space-md);
+  font-family: var(--font-mono-stack);
+  font-size: 0.8125rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  /* Amber — matches the nav accent, scoped here. */
+  color: #f2a93b;
 }
 
 .headline {
-  font-size: clamp(1.9rem, 1.1rem + 3.4vw, var(--text-3xl));
-  line-height: 1.14;
-  max-width: 18ch;
+  margin: 0;
+  max-width: 20ch;
+  /* One sentence, wraps naturally; `.tail` keeps the closing phrase together. */
+  font-size: clamp(1.5rem, 0.6rem + 3.4vw, 3rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  color: var(--text);
+  text-wrap: pretty;
+  overflow-wrap: break-word;
 }
 
-.sub {
-  margin-top: var(--space-md);
-  max-width: 52ch;
-  font-family: var(--font-mono-stack);
-  font-size: var(--text-sm);
-  line-height: var(--leading-snug);
-  color: var(--text-dim);
+.tail {
+  white-space: nowrap;
 }
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-  margin-top: var(--space-lg);
-}
-
-.portrait {
+.media {
   justify-self: end;
 }
 
@@ -43,7 +48,7 @@
     padding-block: var(--space-lg);
   }
 
-  .portrait {
+  .media {
     justify-self: start;
   }
 }

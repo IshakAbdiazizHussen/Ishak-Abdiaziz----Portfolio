@@ -1,6 +1,10 @@
 /** Intro (landing) page content. The headline is fixed — do not paraphrase. */
 export const intro = {
+  kicker: "Software and AI Engineer",
   headline: "I build AI systems, then try to break them before anyone else does.",
+  /** The hero keeps this closing phrase together on one line. */
+  headlineHead: "I build AI systems, then try to break them",
+  headlineTail: "before anyone else does.",
   subheadline:
     "Software and AI Engineer. I ship full, working products and have real ML depth — " +
     "trained models, serving infrastructure, failure-mode design, and measured results.",
