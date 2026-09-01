@@ -444,19 +444,35 @@ part of the architecture, not a finishing touch.
 - `Access-Control-Allow-Credentials: true` (required for the `sid` cookie). This is
   **incompatible with `*`**, which is another reason the allowlist must be explicit.
 - Allowed methods: `GET, POST, OPTIONS`. Allowed headers: `Content-Type`. Preflight
-  (`OPTIONS`) handled for the POST endpoints.
-- Vercel preview deployments have changing URLs — either add a narrow regex for the
-  project's preview domain pattern or point previews at a staging backend. Do **not**
-  loosen to `*` to make previews work. (Note: preview deployments on `*.vercel.app`
-  cannot exercise the admin cookie flow for the reason above; use a
-  `preview.ishak.dev`-style alias or a staging backend if admin needs testing there.)
+  (`OPTIONS`) handled for the POST endpoints; preflight response cached 10 minutes.
+- A disallowed `Origin` gets **no** `Access-Control-Allow-Origin` header. The request
+  is not rejected server-side — the browser blocks the response. Requests with **no**
+  `Origin` header (curl, server-to-server, same-origin navigations) pass the CORS layer
+  and are still gated by `requireAdmin` where it matters. CORS is a browser control,
+  not the auth boundary.
+- The check is one pure predicate (`backend/src/lib/originAllowlist.ts`), unit-tested,
+  used by the single `cors` middleware. No route sets its own CORS headers.
+
+**Vercel preview deployments — decided.** The four static pages need no backend. `/log`
+and `/lets-talk` call the public endpoints, which a `*.vercel.app` preview origin
+cannot reach under the exact allowlist. The backend therefore accepts an optional
+**`CORS_PREVIEW_ORIGIN_REGEX`** — a tight, anchored pattern (e.g.
+`^https://portfolio-[a-z0-9-]+\.vercel\.app$`); a matching `Origin` is allowed through
+CORS so those **public** endpoints work on preview URLs. It is **never** `*`, and it
+does **not** enable the admin cookie flow on a preview (the `sid` cookie is still
+cross-site there). For admin QA on a preview, alias it to `preview.<domain>` or run a
+staging backend. In the simplest setup the regex is left unset.
 
 ### `trust proxy` (affects rate-limit correctness)
 
-- The backend runs behind Railway's proxy, so `req.ip` comes from `X-Forwarded-For`.
-- Set `trust proxy` to the **exact hop count** (Railway terminates at 1 proxy →
-  `app.set('trust proxy', 1)`), **never** `true`. With `true`, any client can spoof
-  `X-Forwarded-For` and defeat the IP-keyed login/contact rate limiters.
+- `req.ip` feeds the IP-keyed login/contact rate limiters, so it must not be spoofable.
+- `TRUST_PROXY_HOPS` defaults to **`0`** — trust nothing, `X-Forwarded-For` ignored,
+  `req.ip` is the socket address. Correct for local dev and unspoofable.
+- **Railway terminates at exactly one proxy**, so set `TRUST_PROXY_HOPS=1` there:
+  `app.set('trust proxy', 1)` trusts only the single hop Railway adds (the real client
+  IP), so a client sending its own `X-Forwarded-For` can't override it.
+- **Never** a value that makes Express `trust proxy` fully permissive — every entry
+  becomes client-controlled and the limiters are worthless.
 
 ---
 
@@ -488,7 +504,8 @@ That is the whole list. The frontend holds **no** database URL, **no** API keys,
 | `CONTACT_FROM_EMAIL` | `/api/contact` | Verified sender address |
 | `BLOB_READ_WRITE_TOKEN` *(or `CLOUDINARY_*`)* | `/api/log/upload` | Blob storage auth |
 | `CORS_ALLOWED_ORIGINS` | CORS middleware | Comma-separated exact origins (`https://ishak.dev,https://www.ishak.dev,http://localhost:3000`) |
-| `TRUST_PROXY_HOPS` *(optional)* | server bootstrap | Number of proxy hops to trust for `req.ip` (Railway = `1`); never configured as `true` |
+| `CORS_PREVIEW_ORIGIN_REGEX` *(optional)* | CORS middleware | Anchored regex; a matching Origin is allowed through CORS for the public endpoints only (Vercel previews). Never `*`. |
+| `TRUST_PROXY_HOPS` *(optional)* | server bootstrap | Proxy hops to trust for `req.ip`. Default `0` (local). **Railway: `1`.** Never fully permissive. |
 | `PORT` | server bootstrap | Provided by Railway |
 
 `.env` files on both sides are gitignored; each service ships a committed

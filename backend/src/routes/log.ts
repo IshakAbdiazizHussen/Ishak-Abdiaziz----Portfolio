@@ -68,7 +68,7 @@ logRouter.post("/", requireAdmin, async (req, res, next) => {
 logRouter.post("/upload", requireAdmin, upload.single("image"), async (req, res, next) => {
   try {
     const file = req.file;
-    if (!file) throw badRequest("No image provided (field \"image\")");
+    if (!file) throw badRequest('No image provided (field "image")');
 
     const result = validateImage({
       buffer: file.buffer,

@@ -30,8 +30,11 @@ const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(4000),
 
-  // Reverse-proxy hop count for req.ip. Railway terminates at 1. Never "true".
-  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(10).default(1),
+  // Reverse-proxy hop count for req.ip. Default 0 = trust nothing (correct for
+  // local dev — req.ip is the socket address, X-Forwarded-For ignored). Railway
+  // terminates at exactly 1 proxy, so set 1 there. Never a value that makes
+  // Express `trust proxy` === true (fully spoofable).
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(10).default(0),
 
   // --- Data stores (required) ---
   DATABASE_URL: z.string().url(),
@@ -54,6 +57,25 @@ const schema = z.object({
 
   // --- CORS (required) ---
   CORS_ALLOWED_ORIGINS: csv,
+  // Optional: allow Vercel preview URLs through CORS for the PUBLIC endpoints.
+  // Must be a valid, tightly-anchored regex. Leave unset in the simple setup.
+  CORS_PREVIEW_ORIGIN_REGEX: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v ? v : undefined))
+    .refine(
+      (v) => {
+        if (!v) return true;
+        try {
+          new RegExp(v);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      { message: "CORS_PREVIEW_ORIGIN_REGEX must be a valid regular expression" },
+    ),
 
   // --- Log-list cache ---
   LOG_CACHE_TTL_SECONDS: z.coerce.number().int().positive().max(600).default(45),

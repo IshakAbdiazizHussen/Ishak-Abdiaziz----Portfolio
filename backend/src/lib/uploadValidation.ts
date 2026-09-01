@@ -14,8 +14,7 @@ export type ImageExt = "jpg" | "png" | "webp";
 type SniffResult = { type: AllowedImageType; ext: ImageExt };
 
 export type ValidateImageResult =
-  | { ok: true; ext: ImageExt; contentType: AllowedImageType }
-  | { ok: false; error: string };
+  { ok: true; ext: ImageExt; contentType: AllowedImageType } | { ok: false; error: string };
 
 /** Identify a supported image by its leading bytes, or null. */
 export function sniffImage(buf: Buffer): SniffResult | null {
