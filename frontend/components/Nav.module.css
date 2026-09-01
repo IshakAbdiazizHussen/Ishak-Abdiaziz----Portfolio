@@ -1,8 +1,8 @@
 /*
  * Nav visually matched to a supplied reference: solid bar, square amber mark
- * + mono wordmark, sans-serif Title Case links with a short accent underline
- * on the active one, and a bordered sun-icon theme-toggle square on the far
- * right (look-only for now — see Nav.tsx).
+ * + monospace wordmark and Title Case links, a short accent underline pinned
+ * to the bar's bottom edge under the active link, and a bordered sun-icon
+ * theme-toggle square on the far right (look-only for now — see Nav.tsx).
  */
 
 .bar {
@@ -60,7 +60,7 @@
 }
 
 .link {
-  font-family: var(--font-sans-stack);
+  font-family: var(--font-mono-stack);
   font-size: 1rem;
   line-height: 1;
   /* Reference-matched — a touch lighter than --text-dim, deliberate. */
