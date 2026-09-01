@@ -1,20 +1,15 @@
 /*
- * Nav visually matched to a supplied reference: solid bar, square amber mark
- * + monospace wordmark and Title Case links, a short accent underline pinned
- * to the bar's bottom edge under the active link, and a bordered sun-icon
- * theme-toggle square on the far right (look-only for now — see Nav.tsx).
+ * Nav: solid bar (var(--nav-bg)), square warm-accent mark + monospace wordmark
+ * and Title Case links, a short accent underline pinned to the bar's bottom
+ * edge under the active link, and the ThemeToggle on the far right. All colours
+ * are theme tokens so it flips with light/dark.
  */
 
 .bar {
-  /* Reference-matched amber — deliberately NOT var(--accent) (the site's
-     cyan), scoped to just this component. */
-  --nav-accent: #f2a93b;
-
   position: sticky;
   top: 0;
   z-index: 50;
-  /* Reference-matched true black — not var(--bg-raised). */
-  background: #000000;
+  background: var(--nav-bg);
   border-bottom: var(--border-width) solid var(--border);
 }
 
@@ -45,7 +40,7 @@
   display: block;
   width: 0.625rem;
   height: 0.625rem;
-  background: var(--nav-accent);
+  background: var(--accent-warm);
 }
 
 .right {
@@ -69,8 +64,7 @@
   font-size: 1rem;
   line-height: 1;
   white-space: nowrap;
-  /* Reference-matched — a touch lighter than --text-dim, deliberate. */
-  color: #c9c9d0;
+  color: var(--nav-link);
   transition: color 150ms ease-out;
 }
 
@@ -82,7 +76,7 @@
 /* Compound selector + later in the cascade so the active page's link stays
    amber even while hovered/focused, instead of the :hover rule winning. */
 .link.active {
-  color: var(--nav-accent);
+  color: var(--accent-warm);
 }
 
 /* One shared underline, not one per link — its position/width are measured in
@@ -95,7 +89,7 @@
   bottom: 0;
   width: 0;
   height: 2px;
-  background: var(--nav-accent);
+  background: var(--accent-warm);
   opacity: 0;
   pointer-events: none;
 }
@@ -107,28 +101,6 @@
       width 180ms ease-out,
       opacity 150ms ease-out;
   }
-}
-
-.theme {
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  flex: none;
-  color: var(--text-dim);
-  background: transparent;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  transition: color 120ms ease;
-}
-
-.theme:hover {
-  color: var(--text);
-}
-
-.sun {
-  display: block;
 }
 
 .menuToggle {
@@ -187,6 +159,6 @@
   }
 
   .active {
-    border-bottom-color: var(--nav-accent);
+    border-bottom-color: var(--accent-warm);
   }
 }

@@ -1,0 +1,35 @@
+.toggle {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  color: var(--text-dim);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+
+.toggle:hover {
+  color: var(--text);
+}
+
+.sun,
+.moon {
+  display: block;
+}
+
+/* Sun in dark theme, moon in light. */
+.moon {
+  display: none;
+}
+
+:global(:root[data-theme="light"]) .sun {
+  display: none;
+}
+
+:global(:root[data-theme="light"]) .moon {
+  display: block;
+}

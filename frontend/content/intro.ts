@@ -10,23 +10,21 @@ export const intro = {
     "that are not flattering.",
   primaryCta: { href: "/built", label: "See what I built" },
   secondaryCta: { href: "/lets-talk", label: "Get in touch" },
-  /** Ordered tech-stack marquee. Keep it to things that appear in real projects. */
+  stackLabel: "Day-to-day stack",
+  /** Ordered tech-stack marquee. Keep it to things you actually use day to day. */
   marquee: [
-    "TypeScript",
     "Next.js",
-    "React",
-    "Node.js",
-    "Express",
-    "Python",
+    "TypeScript",
     "FastAPI",
+    "Django",
     "PyTorch",
-    "ONNX",
-    "LangGraph",
+    "ONNX Runtime",
     "PostgreSQL",
     "Redis",
     "Docker",
-    "Vercel",
-    "Railway",
+    "Tailwind CSS",
+    "HTMX",
+    "pytest",
   ],
 } as const;
 

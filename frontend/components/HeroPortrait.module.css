@@ -21,8 +21,8 @@
   left: -1px;
   width: 1.25rem;
   height: 1.75rem;
-  border-top: 2px solid #f2a93b;
-  border-left: 2px solid #f2a93b;
+  border-top: 2px solid var(--accent-warm);
+  border-left: 2px solid var(--accent-warm);
 }
 
 .disc {

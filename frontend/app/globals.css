@@ -9,6 +9,7 @@
   --bg: #0b0b0c;
   --bg-raised: #141416;
   --bg-inset: #1b1b1e;
+  --nav-bg: #000000;
 
   /* ---- color: lines ---- */
   --border: #2a2a2e;
@@ -18,11 +19,17 @@
   --text: #ededef;
   --text-dim: #a2a2ab;
   --text-faint: #74747d;
+  --nav-link: #c9c9d0;
 
-  /* ---- color: the one accent ---- */
+  /* ---- color: cool accent ---- */
   --accent: #5cc8ff;
   --accent-hover: #8ad8ff;
   --accent-contrast: #05131c;
+
+  /* ---- color: warm accent (hero + nav) ---- */
+  --accent-warm: #f2a93b;
+  --accent-warm-hover: #f6bd5e;
+  --accent-warm-contrast: #05131c;
 
   --danger: #ff8080;
 
@@ -67,6 +74,34 @@
   --motion-distance: 12px;
 
   color-scheme: dark;
+}
+
+/* ---- light theme ---- */
+:root[data-theme="light"] {
+  --bg: #faf8f4;
+  --bg-raised: #f3f0ea;
+  --bg-inset: #ebe7dd;
+  --nav-bg: #faf8f4;
+
+  --border: #e3ded2;
+  --border-strong: #c9c0ac;
+
+  --text: #17150f;
+  --text-dim: #5c574c;
+  --text-faint: #8b8577;
+  --nav-link: #6d6659;
+
+  --accent: #0a7ea4;
+  --accent-hover: #086786;
+  --accent-contrast: #ffffff;
+
+  --accent-warm: #9c6412;
+  --accent-warm-hover: #7f5210;
+  --accent-warm-contrast: #ffffff;
+
+  --danger: #b23225;
+
+  color-scheme: light;
 }
 
 *,

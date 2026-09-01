@@ -1,12 +1,24 @@
-.wrap {
-  margin-block: var(--space-lg);
+.section {
+  margin-block: var(--space-2xl);
+  padding-block: var(--space-lg);
+  /* Full-bleed top + bottom rules. */
+  border-block: var(--border-width) solid var(--border);
+}
+
+.label {
+  max-width: 82rem;
+  margin: 0 auto var(--space-md);
+  padding-inline: var(--page-pad);
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
 }
 
 .marquee {
   position: relative;
   overflow: hidden;
-  padding-block: var(--space-sm);
-  border-block: var(--border-width) solid var(--border);
   -webkit-mask-image: linear-gradient(
     90deg,
     transparent,
@@ -17,12 +29,13 @@
   mask-image: linear-gradient(90deg, transparent, #000 5rem, #000 calc(100% - 5rem), transparent);
 }
 
-/* No flex gap — spacing lives in .item::before so the track width is exactly
-   2x the content and translateX(-50%) loops seamlessly. */
+/* Spacing lives in .item's trailing margin (not flex gap) so the doubled track
+   loops seamlessly at translateX(-50%). */
 .track {
   display: flex;
+  align-items: center;
   width: max-content;
-  animation: marquee-scroll 42s linear infinite;
+  animation: marquee-scroll 48s linear infinite;
 }
 
 .marquee:hover .track,
@@ -31,17 +44,15 @@
 }
 
 .item {
+  flex: none;
+  margin-inline-end: var(--space-md);
+  padding: 0.55rem 1.15rem;
   font-family: var(--font-mono-stack);
-  font-size: var(--text-sm);
-  letter-spacing: 0.02em;
-  color: var(--text-faint);
+  font-size: 0.9375rem;
+  color: var(--text-dim);
   white-space: nowrap;
-}
-
-.item::before {
-  content: "·";
-  margin-inline: var(--space-md);
-  color: var(--border-strong);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
 }
 
 @keyframes marquee-scroll {
@@ -72,22 +83,25 @@
     position: static;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2xs) var(--space-md);
+    gap: var(--space-sm);
+    max-width: 82rem;
     width: auto;
     height: auto;
-    margin: 0;
-    padding-block: var(--space-sm);
+    margin: 0 auto;
+    padding-inline: var(--page-pad);
     overflow: visible;
     clip: auto;
     clip-path: none;
     white-space: normal;
     list-style: none;
-    border-block: var(--border-width) solid var(--border);
   }
 
   .list li {
+    padding: 0.55rem 1.15rem;
     font-family: var(--font-mono-stack);
-    font-size: var(--text-sm);
-    color: var(--text-faint);
+    font-size: 0.9375rem;
+    color: var(--text-dim);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
   }
 }

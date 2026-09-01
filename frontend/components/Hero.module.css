@@ -27,7 +27,7 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   /* Amber — matches the nav accent, scoped here. */
-  color: #f2a93b;
+  color: var(--accent-warm);
 }
 
 .headline {
@@ -73,12 +73,12 @@
 }
 
 .cta {
-  color: #05131c;
-  background: #f2a93b;
+  color: var(--accent-warm-contrast);
+  background: var(--accent-warm);
 }
 
 .cta:hover {
-  background: #f6bd5e;
+  background: var(--accent-warm-hover);
 }
 
 .ctaGhost {
@@ -87,8 +87,8 @@
 }
 
 .ctaGhost:hover {
-  color: #f2a93b;
-  border-color: #f2a93b;
+  color: var(--accent-warm);
+  border-color: var(--accent-warm);
 }
 
 .stats {
@@ -120,7 +120,7 @@
 }
 
 .accentValue {
-  color: #f2a93b;
+  color: var(--accent-warm);
 }
 
 .statNote {

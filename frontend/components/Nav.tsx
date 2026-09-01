@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { ThemeToggle } from "./ThemeToggle";
 import styles from "./Nav.module.css";
 
 const LINKS = [
@@ -13,25 +14,6 @@ const LINKS = [
   { href: "/log", label: "Log" },
   { href: "/lets-talk", label: "Let's Talk" },
 ] as const;
-
-function SunIcon() {
-  return (
-    <svg
-      className={styles.sun}
-      viewBox="0 0 24 24"
-      width="18"
-      height="18"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-    </svg>
-  );
-}
 
 export function Nav() {
   const pathname = usePathname();
@@ -114,10 +96,7 @@ export function Nav() {
             })}
           </nav>
 
-          {/* TODO: wire to a real light-mode toggle. Look-only for now. */}
-          <button type="button" className={styles.theme} aria-label="Toggle colour theme">
-            <SunIcon />
-          </button>
+          <ThemeToggle />
         </div>
 
         {/* Pinned to the bottom edge of the nav bar; position/width set in JS. */}
