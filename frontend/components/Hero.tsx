@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { heroStats, intro } from "@/content/intro";
 import { Reveal } from "./Reveal";
@@ -9,9 +10,12 @@ export function Hero() {
       <div className={styles.hero}>
         <p className={styles.kicker}>{intro.kicker}</p>
         <h1 className={styles.headline}>
-          {intro.headlineHead}
-          <br />
-          <span className={styles.tail}>{intro.headlineTail}</span>
+          {intro.headlineLines.map((line, i) => (
+            <Fragment key={line}>
+              {i > 0 ? <br /> : null}
+              {line}
+            </Fragment>
+          ))}
         </h1>
         <p className={styles.sub}>{intro.subheadline}</p>
 

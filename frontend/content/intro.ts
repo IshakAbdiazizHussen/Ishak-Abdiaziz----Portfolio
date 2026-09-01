@@ -2,10 +2,8 @@
 export const intro = {
   kicker: "Software and AI Engineer",
   headline: "I build AI systems, then try to break them before anyone else does.",
-  /** The hero forces a line break here: the head ends on "before",
-      the tail ("anyone else does.") starts the final line. */
-  headlineHead: "I build AI systems, then try to break them before",
-  headlineTail: "anyone else does.",
+  /** The hero renders the headline on these exact three lines. */
+  headlineLines: ["I build AI systems, then try", "to break them before anyone", "else does."],
   subheadline:
     "A software and AI engineer who ships the whole thing — model, API, and the " +
     "interface people actually use — and publishes the numbers, including the ones " +
