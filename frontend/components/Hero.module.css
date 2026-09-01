@@ -1,13 +1,5 @@
 .hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-  gap: var(--space-xl);
-  align-items: center;
   padding-block: var(--space-2xl) var(--space-xl);
-}
-
-.body {
-  min-width: 0;
 }
 
 .kicker {
@@ -123,18 +115,8 @@
   color: var(--text-dim);
 }
 
-.media {
-  justify-self: end;
-}
-
 @media (max-width: 820px) {
   .hero {
-    grid-template-columns: 1fr;
-    gap: var(--space-lg);
     padding-block: var(--space-lg);
-  }
-
-  .media {
-    justify-self: start;
   }
 }
