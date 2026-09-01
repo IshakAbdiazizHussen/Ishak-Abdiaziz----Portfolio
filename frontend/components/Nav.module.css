@@ -13,7 +13,8 @@
   position: sticky;
   top: 0;
   z-index: 50;
-  background: var(--bg-raised);
+  /* Reference-matched true black — not var(--bg-raised). */
+  background: #000000;
   border-bottom: var(--border-width) solid var(--border);
 }
 
@@ -24,7 +25,7 @@
   gap: var(--space-md);
   max-width: var(--width-page);
   margin-inline: auto;
-  padding: 2rem var(--page-pad);
+  padding: 1.75rem var(--page-pad);
 }
 
 .brand {
