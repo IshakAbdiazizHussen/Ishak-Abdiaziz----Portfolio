@@ -9,7 +9,8 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-lg);
-  padding-block: var(--space-xl);
+  /* Small gap between the rule and the text; more breathing room below. */
+  padding-block: var(--space-md) var(--space-xl);
   /* Rule aligned with the content, not the viewport. */
   border-top: var(--border-width) solid var(--border);
   color: inherit;
