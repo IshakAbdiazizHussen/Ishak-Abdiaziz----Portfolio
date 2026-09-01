@@ -14,6 +14,7 @@ export function Hero() {
             <br />
             <span className={styles.tail}>{intro.headlineTail}</span>
           </h1>
+          <p className={styles.sub}>{intro.subheadline}</p>
         </div>
         {/* Right column — reserved for a hero image. */}
         <div className={styles.media}>

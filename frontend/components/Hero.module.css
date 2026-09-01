@@ -37,6 +37,14 @@
   white-space: nowrap;
 }
 
+.sub {
+  margin: var(--space-lg) 0 0;
+  max-width: 54ch;
+  font-size: 1.1875rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
 .media {
   justify-self: end;
 }

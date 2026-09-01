@@ -7,8 +7,9 @@ export const intro = {
   headlineHead: "I build AI systems, then try to break them before",
   headlineTail: "anyone else does.",
   subheadline:
-    "Software and AI Engineer. I ship full, working products and have real ML depth — " +
-    "trained models, serving infrastructure, failure-mode design, and measured results.",
+    "A software and AI engineer who ships the whole thing — model, API, and the " +
+    "interface people actually use — and publishes the numbers, including the ones " +
+    "that are not flattering.",
   primaryCta: { href: "/built", label: "See what I've built" },
   secondaryCta: { href: "/lets-talk", label: "Get in touch" },
   /** Ordered tech-stack marquee. Keep it to things that appear in real projects. */
