@@ -41,10 +41,10 @@ export function Nav() {
   const itemRefs = useRef(new Map<string, HTMLAnchorElement>());
   const indicatorRef = useRef<HTMLSpanElement>(null);
 
-  // Static — tracks only the current page's link, not hover/focus. It moves
-  // only when `pathname` actually changes (i.e. a menu item was clicked).
-  // Positioned against the whole nav bar (`.inner`) so it pins to the bar's
-  // bottom edge, not to the links row which floats higher up.
+  // Static — tracks only the current page's link, not hover/focus. Moves only
+  // when `pathname` changes (i.e. a menu item was clicked). Pinned to the
+  // bottom edge of the nav bar (see the CSS); position/width measured against
+  // the bar itself so it lines up under the active link.
   useEffect(() => {
     const indicator = indicatorRef.current;
     const inner = innerRef.current;

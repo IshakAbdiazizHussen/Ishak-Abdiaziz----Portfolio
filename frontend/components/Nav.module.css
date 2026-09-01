@@ -26,7 +26,8 @@
   gap: var(--space-md);
   max-width: var(--width-page);
   margin-inline: auto;
-  padding: 1rem var(--page-pad);
+  /* Compact so the centered row stays close to the bottom-pinned underline. */
+  padding: 0.75rem var(--page-pad);
 }
 
 .brand {
@@ -79,10 +80,10 @@
   color: var(--nav-accent);
 }
 
-/* One shared underline, not one per link — its position/width are measured
-   in JS from whichever link is hovered/focused (falling back to the active
-   page's link) and animated via transform/width, so it reads as a single
-   element sliding and resizing rather than separate static bars. */
+/* One shared underline, not one per link — its position/width are measured in
+   JS from the active page's link and animated via transform/width, so it reads
+   as a single element sliding and resizing rather than separate static bars.
+   Pinned to the bottom edge of the nav bar (`.inner`), just above the border. */
 .indicator {
   position: absolute;
   left: 0;
@@ -106,8 +107,8 @@
 .theme {
   display: grid;
   place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2rem;
+  height: 2rem;
   flex: none;
   color: var(--text-dim);
   background: transparent;
