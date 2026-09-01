@@ -1,5 +1,18 @@
 .hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: var(--space-xl);
+  align-items: center;
   padding-block: var(--space-2xl) var(--space-xl);
+}
+
+.body {
+  min-width: 0;
+}
+
+.media {
+  justify-self: end;
+  width: 100%;
 }
 
 .kicker {
@@ -14,8 +27,9 @@
 
 .headline {
   margin: 0;
-  /* Exactly three lines — breaks come from explicit <br>s in the markup. */
-  font-size: clamp(1.5rem, 0.7rem + 2.7vw, 2.5rem);
+  /* Exactly three lines — breaks come from explicit <br>s in the markup.
+     Max sized so the longest line fits the (narrower) text column. */
+  font-size: clamp(1.5rem, 0.7rem + 2.4vw, 2.25rem);
   font-weight: 700;
   line-height: 1.12;
   letter-spacing: -0.015em;
@@ -109,8 +123,14 @@
   color: var(--text-dim);
 }
 
-@media (max-width: 820px) {
+@media (max-width: 900px) {
   .hero {
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
     padding-block: var(--space-lg);
+  }
+
+  .media {
+    justify-self: start;
   }
 }

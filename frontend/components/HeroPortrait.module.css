@@ -1,0 +1,60 @@
+.wrap {
+  margin: 0;
+  width: 100%;
+  max-width: 26rem;
+}
+
+.frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  background: var(--bg-raised);
+  border: var(--border-width) solid var(--border);
+  overflow: hidden;
+}
+
+/* Amber crop-mark at the top-left, poking slightly outside the frame. */
+.corner {
+  position: absolute;
+  top: -0.5rem;
+  left: -1px;
+  width: 1.25rem;
+  height: 1.75rem;
+  border-top: 2px solid #f2a93b;
+  border-left: 2px solid #f2a93b;
+}
+
+.disc {
+  position: absolute;
+  width: 82%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--bg-inset),
+    var(--bg-inset) 6px,
+    var(--bg-raised) 6px,
+    var(--bg-raised) 13px
+  );
+}
+
+.label {
+  position: relative;
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-xs);
+  letter-spacing: 0.22em;
+  line-height: 2;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.caption {
+  margin-top: var(--space-md);
+  max-width: 30ch;
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--text-faint);
+}
