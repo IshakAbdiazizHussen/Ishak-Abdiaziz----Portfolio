@@ -1,7 +1,9 @@
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
-  gap: var(--space-xl);
+  /* Wide gap between the copy and the portrait; the text column ratio is
+     bumped so the headline's three lines still fit. */
+  grid-template-columns: minmax(0, 2fr) minmax(0, 0.9fr);
+  gap: 7rem;
   align-items: center;
   padding-block: var(--space-2xl) var(--space-xl);
 }
