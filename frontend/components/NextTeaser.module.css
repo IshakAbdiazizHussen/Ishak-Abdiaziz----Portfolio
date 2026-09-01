@@ -47,16 +47,23 @@
 .arrow {
   flex: none;
   color: var(--accent-warm);
-  animation: next-bob 1.8s ease-in-out infinite;
+  animation: next-bob 2s ease-in-out infinite;
 }
 
+/* Fades in at the top, drifts down, fades out — then loops (the jump back is
+   hidden because opacity is 0 at both ends). */
 @keyframes next-bob {
-  0%,
-  100% {
-    transform: translateY(0);
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
   }
-  50% {
-    transform: translateY(7px);
+  35%,
+  65% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(10px);
   }
 }
 
