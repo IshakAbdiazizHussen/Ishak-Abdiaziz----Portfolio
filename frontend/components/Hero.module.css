@@ -1,9 +1,7 @@
 .hero {
   display: grid;
-  /* Wide gap between the copy and the portrait; the text column ratio is
-     bumped so the headline's three lines still fit. */
-  grid-template-columns: minmax(0, 2fr) minmax(0, 0.9fr);
-  gap: 7rem;
+  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+  gap: var(--space-2xl);
   align-items: center;
   padding-block: var(--space-2xl) var(--space-xl);
 }
@@ -14,7 +12,6 @@
 
 .media {
   justify-self: end;
-  width: 100%;
 }
 
 .kicker {
@@ -40,7 +37,7 @@
 }
 
 .sub {
-  margin: var(--space-lg) 0 0;
+  margin: var(--space-md) 0 0;
   max-width: 54ch;
   font-size: 1.1875rem;
   line-height: 1.6;
@@ -51,7 +48,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-sm);
-  margin-top: var(--space-xl);
+  margin-top: var(--space-lg);
 }
 
 .cta,
@@ -93,7 +90,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-md) var(--space-xl);
-  margin: var(--space-xl) 0 0;
+  margin: var(--space-lg) 0 0;
 }
 
 .stat {
