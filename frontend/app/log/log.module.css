@@ -21,6 +21,14 @@
   color: var(--text);
 }
 
+.sub {
+  margin: var(--space-md) 0 0;
+  max-width: 60ch;
+  font-size: 1.1875rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
 .notice {
   padding-block: var(--space-lg);
   color: var(--text-faint);

@@ -28,6 +28,10 @@ export default async function LogPage() {
       <header className={styles.header}>
         <p className={styles.kicker}>Log</p>
         <h1 className={styles.title}>Shipped, learned, achieved</h1>
+        <p className={styles.sub}>
+          A running record, newest first. Entries go in when something is actually done, not
+          when it is planned.
+        </p>
       </header>
 
       {failed ? (
