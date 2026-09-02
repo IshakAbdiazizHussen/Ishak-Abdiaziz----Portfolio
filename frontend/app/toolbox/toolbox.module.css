@@ -29,8 +29,16 @@
   color: var(--text-dim);
 }
 
+/* Wider than the page column so the four groups have room to breathe. */
+.groupsWrap {
+  max-width: 82rem;
+  margin-inline: auto;
+  padding-inline: var(--page-pad);
+}
+
 /* Hairline dividers between every cell (and an outer border) via a 1px grid gap
-   over a border-coloured backdrop — stays clean however the grid wraps. */
+   over a border-coloured backdrop — stays clean however the grid wraps.
+   All three colours are theme tokens, so the panel follows the sun/moon toggle. */
 .groups {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -42,8 +50,8 @@
 }
 
 .group {
-  padding: var(--space-lg) var(--space-md);
-  background: var(--bg);
+  padding: var(--space-lg);
+  background: var(--bg-raised);
 }
 
 .groupName {
@@ -80,6 +88,7 @@
 .note {
   display: block;
   margin-top: var(--space-3xs);
+  max-width: 24ch;
   font-size: var(--text-sm);
   line-height: 1.5;
   color: var(--text-dim);

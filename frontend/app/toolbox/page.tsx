@@ -10,27 +10,31 @@ export const metadata: Metadata = {
 
 export default function ToolboxPage() {
   return (
-    <Container>
-      <header className={styles.header}>
-        <p className={styles.kicker}>{toolboxHeader.kicker}</p>
-        <h1 className={styles.title}>{toolboxHeader.title}</h1>
-        <p className={styles.sub}>{toolboxHeader.sub}</p>
-      </header>
-      <div className={styles.groups}>
-        {toolbox.map((group) => (
-          <section key={group.group} className={styles.group}>
-            <h2 className={styles.groupName}>{group.group}</h2>
-            <ul className={styles.items}>
-              {group.items.map((tool) => (
-                <li key={tool.name} className={styles.item}>
-                  <span className={styles.name}>{tool.name}</span>
-                  {tool.note ? <span className={styles.note}>{tool.note}</span> : null}
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+    <>
+      <Container>
+        <header className={styles.header}>
+          <p className={styles.kicker}>{toolboxHeader.kicker}</p>
+          <h1 className={styles.title}>{toolboxHeader.title}</h1>
+          <p className={styles.sub}>{toolboxHeader.sub}</p>
+        </header>
+      </Container>
+      <div className={styles.groupsWrap}>
+        <div className={styles.groups}>
+          {toolbox.map((group) => (
+            <section key={group.group} className={styles.group}>
+              <h2 className={styles.groupName}>{group.group}</h2>
+              <ul className={styles.items}>
+                {group.items.map((tool) => (
+                  <li key={tool.name} className={styles.item}>
+                    <span className={styles.name}>{tool.name}</span>
+                    {tool.note ? <span className={styles.note}>{tool.note}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
       </div>
-    </Container>
+    </>
   );
 }
