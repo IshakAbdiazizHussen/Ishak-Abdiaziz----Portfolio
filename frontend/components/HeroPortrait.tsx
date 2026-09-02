@@ -7,10 +7,10 @@ export function HeroPortrait() {
       <div className={styles.frame}>
         <span className={styles.corner} aria-hidden="true" />
         <Image
-          src="/Ishak.jpg"
+          src="/Ishak-removebg-preview.png"
           alt="Ishak Abdiaziz"
-          width={670}
-          height={1080}
+          width={393}
+          height={634}
           priority
           sizes="(max-width: 82rem) 90vw, 32rem"
           className={styles.photo}
