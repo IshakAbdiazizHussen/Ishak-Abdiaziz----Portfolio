@@ -38,24 +38,27 @@ export default function LetsTalkPage() {
         </p>
       </header>
       <div className={styles.layout}>
-        <dl className={styles.direct}>
-          {directLinks.map((link) => (
-            <div key={link.label} className={styles.row}>
-              <dt className={styles.rowLabel}>{link.label}</dt>
-              <dd className={styles.rowValue}>
-                <a
-                  href={link.href}
-                  className={styles.rowLink}
-                  {...(link.external
-                    ? { target: "_blank", rel: "noopener noreferrer" }
-                    : {})}
-                >
-                  {link.display}
-                </a>
-              </dd>
-            </div>
-          ))}
-        </dl>
+        <div>
+          <dl className={styles.direct}>
+            {directLinks.map((link) => (
+              <div key={link.label} className={styles.row}>
+                <dt className={styles.rowLabel}>{link.label}</dt>
+                <dd className={styles.rowValue}>
+                  <a
+                    href={link.href}
+                    className={styles.rowLink}
+                    {...(link.external
+                      ? { target: "_blank", rel: "noopener noreferrer" }
+                      : {})}
+                  >
+                    {link.display}
+                  </a>
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <p className={styles.footnote}>Placeholder handles — replace before publishing.</p>
+        </div>
 
         <div className={styles.formWrap}>
           <ContactForm />
