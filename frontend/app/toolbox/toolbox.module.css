@@ -51,7 +51,7 @@
 
 .group {
   padding: var(--space-lg);
-  background: var(--bg-raised);
+  background: var(--bg);
 }
 
 .groupName {
