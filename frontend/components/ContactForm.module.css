@@ -1,5 +1,8 @@
 .form {
-  max-width: 34rem;
+  padding: var(--space-xl);
+  background: var(--bg-raised);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
 }
 
 .fieldset {
@@ -14,51 +17,51 @@
 
 .legend {
   padding: 0;
-  margin-bottom: var(--space-md);
-  font-family: var(--font-mono-stack);
-  font-size: var(--text-xs);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--text-faint);
+  margin-bottom: var(--space-lg);
+  font-family: var(--font-sans-stack);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
 }
 
 .field {
   display: flex;
   flex-direction: column;
   gap: var(--space-2xs);
-  margin-bottom: var(--space-md);
+  margin-bottom: var(--space-lg);
 }
 
 .field label {
   font-family: var(--font-mono-stack);
   font-size: var(--text-xs);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: var(--text-faint);
 }
 
 .field input,
 .field textarea {
   width: 100%;
-  padding: var(--space-2xs) var(--space-xs);
+  padding: 0.85rem 1rem;
   font-family: var(--font-sans-stack);
   font-size: var(--text-base);
   color: var(--text);
-  background: var(--bg-inset);
-  border: var(--border-width) solid var(--border-strong);
+  background: var(--bg);
+  border: var(--border-width) solid var(--border);
   border-radius: var(--radius);
 }
 
 .field textarea {
   resize: vertical;
-  min-height: 8rem;
+  min-height: 12rem;
 }
 
 .field input:focus-visible,
 .field textarea:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-warm);
   outline-offset: 1px;
-  border-color: var(--accent);
+  border-color: var(--accent-warm);
 }
 
 .field input[aria-invalid="true"],
@@ -69,6 +72,31 @@
 .error {
   font-size: var(--text-sm);
   color: var(--danger);
+}
+
+.submit {
+  width: 100%;
+  margin-top: var(--space-sm);
+  padding: 1rem 1.5rem;
+  font-family: var(--font-sans-stack);
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--accent-warm-contrast);
+  background: var(--accent-warm);
+  border: var(--border-width) solid var(--accent-warm);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out;
+}
+
+.submit:hover {
+  background: var(--accent-warm-hover);
+  border-color: var(--accent-warm-hover);
+}
+
+.submit:focus-visible {
+  outline: 2px solid var(--accent-warm);
+  outline-offset: 2px;
 }
 
 .honeypot {

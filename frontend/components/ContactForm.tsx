@@ -133,8 +133,8 @@ export function ContactForm() {
           />
         </div>
 
-        <button type="submit" className="button">
-          {status === "submitting" ? "Sending…" : "Send message"}
+        <button type="submit" className={styles.submit}>
+          {status === "submitting" ? "Sending…" : "Send"}
         </button>
       </fieldset>
 
