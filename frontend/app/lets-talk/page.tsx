@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/Container";
-import { PageHeader } from "@/components/PageHeader";
 import { MonoLabel } from "@/components/MonoLabel";
 import { ContactForm } from "@/components/ContactForm";
 import { site } from "@/content/site";
@@ -14,11 +13,13 @@ export const metadata: Metadata = {
 export default function LetsTalkPage() {
   return (
     <Container>
-      <PageHeader
-        kicker="Let's Talk"
-        title="Let's Talk"
-        intro="Hiring for a role, or want to dig into one of the projects? Send a note."
-      />
+      <header className={styles.header}>
+        <p className={styles.kicker}>Let&apos;s talk</p>
+        <h1 className={styles.title}>
+          <span className={styles.line}>Open to engineering</span>
+          <span className={styles.line}>roles and contract work</span>
+        </h1>
+      </header>
       <div className={styles.layout}>
         <aside className={styles.direct}>
           <MonoLabel as="div">Direct</MonoLabel>
