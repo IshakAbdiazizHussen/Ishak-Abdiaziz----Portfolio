@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/Container";
-import { PageHeader } from "@/components/PageHeader";
 import { LogFeed } from "@/components/LogFeed";
 import { fetchLogEntries } from "@/lib/log";
 import type { LogEntry } from "@/lib/types";
@@ -26,11 +25,10 @@ export default async function LogPage() {
 
   return (
     <Container>
-      <PageHeader
-        kicker="Log"
-        title="Log"
-        intro="A reverse-chronological feed of things shipped, learned, and achieved."
-      />
+      <header className={styles.header}>
+        <p className={styles.kicker}>Log</p>
+        <h1 className={styles.title}>Shipped, learned, broken</h1>
+      </header>
 
       {failed ? (
         <p className={styles.notice}>
