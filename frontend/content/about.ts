@@ -32,4 +32,20 @@ export const about = {
     "What I look for now is work where correctness is checkable and the stakes of being " +
       "wrong are real enough that someone cares about the difference between 78% and 91%.",
   ],
+  facts: [
+    {
+      label: "Working method",
+      body: "Evaluation first, model second. If I cannot measure it, I do not claim it.",
+    },
+    {
+      label: "Scope",
+      body: "Model, API and interface. I would rather own the whole path than half of it.",
+    },
+    {
+      label: "Currently",
+      body:
+        "Building an evaluation set for Research-Agent, and improving the classifier's " +
+        "animal classes.",
+    },
+  ],
 } as const;

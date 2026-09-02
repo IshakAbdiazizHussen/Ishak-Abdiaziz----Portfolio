@@ -24,3 +24,38 @@
 .line {
   display: block;
 }
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-lg);
+  margin: var(--space-xl) 0 0;
+  padding-top: var(--space-lg);
+  border-top: var(--border-width) solid var(--border);
+}
+
+.fact {
+  min-width: 0;
+}
+
+.factLabel {
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-xs);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.factBody {
+  margin: var(--space-sm) 0 0;
+  font-size: var(--text-md);
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+@media (max-width: 640px) {
+  .facts {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+}

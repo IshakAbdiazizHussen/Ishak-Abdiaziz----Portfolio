@@ -27,6 +27,14 @@ export default function HowIGotHerePage() {
           <p key={i}>{paragraph}</p>
         ))}
       </Prose>
+      <dl className={styles.facts}>
+        {about.facts.map((fact) => (
+          <div key={fact.label} className={styles.fact}>
+            <dt className={styles.factLabel}>{fact.label}</dt>
+            <dd className={styles.factBody}>{fact.body}</dd>
+          </div>
+        ))}
+      </dl>
     </Container>
   );
 }
