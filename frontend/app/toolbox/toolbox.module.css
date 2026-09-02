@@ -99,6 +99,17 @@
   color: var(--text-dim);
 }
 
+.footnote {
+  margin: var(--space-lg) 0 0;
+  max-width: 62ch;
+  padding-left: var(--space-md);
+  border-left: 2px solid var(--border-strong);
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  color: var(--text-dim);
+}
+
 @media (max-width: 60rem) {
   .groups {
     grid-template-columns: repeat(2, 1fr);

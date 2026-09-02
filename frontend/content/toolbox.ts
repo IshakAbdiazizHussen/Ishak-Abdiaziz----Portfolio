@@ -20,6 +20,10 @@ export const toolboxHeader = {
     "list, and the list is short on purpose.",
 };
 
+export const toolboxNote =
+  "Not on here, and I would need ramp-up time: Kubernetes, distributed training, Rust. " +
+  "I would rather say that than pad the list.";
+
 export const toolbox: ToolGroup[] = [
   {
     group: "Frontend",

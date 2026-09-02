@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/Container";
-import { toolbox, toolboxHeader } from "@/content/toolbox";
+import { toolbox, toolboxHeader, toolboxNote } from "@/content/toolbox";
 import styles from "./toolbox.module.css";
 
 export const metadata: Metadata = {
@@ -34,6 +34,7 @@ export default function ToolboxPage() {
             </section>
           ))}
         </div>
+        <p className={styles.footnote}>{toolboxNote}</p>
       </div>
     </>
   );
