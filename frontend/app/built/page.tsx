@@ -19,8 +19,8 @@ export default function BuiltPage() {
         <h1 className={styles.title}>{builtHeader.title}</h1>
         <p className={styles.sub}>{builtHeader.sub}</p>
       </header>
-      {projects.map((project, i) => (
-        <ProjectCard key={project.slug} project={project} index={i + 1} />
+      {projects.map((project) => (
+        <ProjectCard key={project.slug} project={project} />
       ))}
     </Container>
   );
