@@ -15,6 +15,9 @@ export interface ToolGroup {
 export const toolboxHeader = {
   kicker: "Toolbox",
   title: "What I actually use",
+  sub:
+    "Things I have shipped something with. Tools I have only read about are not on this " +
+    "list, and the list is short on purpose.",
 };
 
 export const toolbox: ToolGroup[] = [

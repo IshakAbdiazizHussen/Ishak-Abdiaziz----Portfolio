@@ -15,6 +15,7 @@ export default function ToolboxPage() {
       <header className={styles.header}>
         <p className={styles.kicker}>{toolboxHeader.kicker}</p>
         <h1 className={styles.title}>{toolboxHeader.title}</h1>
+        <p className={styles.sub}>{toolboxHeader.sub}</p>
       </header>
       <div className={styles.groups}>
         {toolbox.map((group) => (

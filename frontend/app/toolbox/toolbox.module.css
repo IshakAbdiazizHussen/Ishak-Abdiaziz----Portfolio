@@ -21,6 +21,14 @@
   color: var(--text);
 }
 
+.sub {
+  margin: var(--space-md) 0 0;
+  max-width: 60ch;
+  font-size: 1.1875rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
 .groups {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
