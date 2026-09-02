@@ -1,7 +1,6 @@
 .header {
   padding-block: var(--space-2xl) var(--space-lg);
   margin-bottom: var(--space-lg);
-  border-bottom: var(--border-width) solid var(--border);
 }
 
 .kicker {
