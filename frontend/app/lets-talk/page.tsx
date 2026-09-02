@@ -20,8 +20,9 @@ export default function LetsTalkPage() {
           <span className={styles.line}>roles and contract work</span>
         </h1>
         <p className={styles.sub}>
-          Happy to walk through either project&apos;s code or evaluation in detail. Direct email
-          is fastest.
+          Happy to walk through either project&apos;s code or evaluation in
+          <br />
+          detail. Direct email is fastest.
         </p>
       </header>
       <div className={styles.layout}>

@@ -27,7 +27,6 @@
 
 .sub {
   margin: var(--space-md) 0 0;
-  max-width: 56ch;
   font-size: 1.1875rem;
   line-height: 1.6;
   color: var(--text-dim);
