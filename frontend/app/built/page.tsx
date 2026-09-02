@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/Container";
-import { PageHeader } from "@/components/PageHeader";
 import { ProjectCard } from "@/components/ProjectCard";
-import { projects } from "@/content/projects";
+import { builtHeader, projects } from "@/content/projects";
+import styles from "./built.module.css";
 
 export const metadata: Metadata = {
   title: "Built",
@@ -14,11 +14,11 @@ export const metadata: Metadata = {
 export default function BuiltPage() {
   return (
     <Container>
-      <PageHeader
-        kicker="Built"
-        title="Built"
-        intro="Two real, deployed projects. Each one told through a single hard technical decision."
-      />
+      <header className={styles.header}>
+        <p className={styles.kicker}>{builtHeader.kicker}</p>
+        <h1 className={styles.title}>{builtHeader.title}</h1>
+        <p className={styles.sub}>{builtHeader.sub}</p>
+      </header>
       {projects.map((project, i) => (
         <ProjectCard key={project.slug} project={project} index={i + 1} />
       ))}

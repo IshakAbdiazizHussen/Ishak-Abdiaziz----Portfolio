@@ -87,3 +87,12 @@ export const projects: Project[] = [
     sourceUrl: "https://github.com/your-handle/research-agent",
   },
 ];
+
+export const builtHeader = {
+  kicker: "Built",
+  title: "Two projects I can defend line by line",
+  sub:
+    "Both are deployed and open. Every number below comes from a held-out evaluation " +
+    "I can reproduce on request; where I have not measured something, I say so instead " +
+    "of estimating.",
+};

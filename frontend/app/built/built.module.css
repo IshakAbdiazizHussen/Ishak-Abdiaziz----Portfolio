@@ -1,0 +1,32 @@
+.header {
+  padding-block: var(--space-2xl) var(--space-lg);
+  margin-bottom: var(--space-lg);
+  border-bottom: var(--border-width) solid var(--border);
+}
+
+.kicker {
+  margin: 0 0 var(--space-md);
+  font-family: var(--font-mono-stack);
+  font-size: 0.8125rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-warm);
+}
+
+.title {
+  margin: 0;
+  max-width: 22ch;
+  font-size: clamp(1.75rem, 1rem + 2.6vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  color: var(--text);
+}
+
+.sub {
+  margin: var(--space-md) 0 0;
+  max-width: 52ch;
+  font-size: 1.1875rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
