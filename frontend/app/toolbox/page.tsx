@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/Container";
-import { PageHeader } from "@/components/PageHeader";
 import { MonoLabel } from "@/components/MonoLabel";
-import { toolbox } from "@/content/toolbox";
+import { toolbox, toolboxHeader } from "@/content/toolbox";
 import styles from "./toolbox.module.css";
 
 export const metadata: Metadata = {
@@ -13,11 +12,10 @@ export const metadata: Metadata = {
 export default function ToolboxPage() {
   return (
     <Container>
-      <PageHeader
-        kicker="Toolbox"
-        title="Toolbox"
-        intro="What I actually reach for — grouped, honest, no logo wall. If it's listed, I can talk about it in an interview."
-      />
+      <header className={styles.header}>
+        <p className={styles.kicker}>{toolboxHeader.kicker}</p>
+        <h1 className={styles.title}>{toolboxHeader.title}</h1>
+      </header>
       <div className={styles.groups}>
         {toolbox.map((group) => (
           <section key={group.group} className={styles.group}>

@@ -12,6 +12,11 @@ export interface ToolGroup {
  * Honest, grouped list. Rule: if it's here, you can be quizzed on it in an
  * interview. Trim or adjust to match what's actually true for you.
  */
+export const toolboxHeader = {
+  kicker: "Toolbox",
+  title: "What I actually use",
+};
+
 export const toolbox: ToolGroup[] = [
   {
     group: "Frontend",
