@@ -11,30 +11,34 @@ export const metadata: Metadata = {
 
 export default function HowIGotHerePage() {
   return (
-    <Container size="prose">
-      <header className={styles.header}>
-        <p className={styles.kicker}>{about.header.kicker}</p>
-        <h1 className={styles.title}>
-          {about.header.titleLines.map((line) => (
-            <span key={line} className={styles.line}>
-              {line}
-            </span>
+    <>
+      <Container size="prose">
+        <header className={styles.header}>
+          <p className={styles.kicker}>{about.header.kicker}</p>
+          <h1 className={styles.title}>
+            {about.header.titleLines.map((line) => (
+              <span key={line} className={styles.line}>
+                {line}
+              </span>
+            ))}
+          </h1>
+        </header>
+        <Prose>
+          {about.paragraphs.map((paragraph, i) => (
+            <p key={i}>{paragraph}</p>
           ))}
-        </h1>
-      </header>
-      <Prose>
-        {about.paragraphs.map((paragraph, i) => (
-          <p key={i}>{paragraph}</p>
-        ))}
-      </Prose>
-      <dl className={styles.facts}>
-        {about.facts.map((fact) => (
-          <div key={fact.label} className={styles.fact}>
-            <dt className={styles.factLabel}>{fact.label}</dt>
-            <dd className={styles.factBody}>{fact.body}</dd>
-          </div>
-        ))}
-      </dl>
-    </Container>
+        </Prose>
+      </Container>
+      <Container>
+        <dl className={styles.facts}>
+          {about.facts.map((fact) => (
+            <div key={fact.label} className={styles.fact}>
+              <dt className={styles.factLabel}>{fact.label}</dt>
+              <dd className={styles.factBody}>{fact.body}</dd>
+            </div>
+          ))}
+        </dl>
+      </Container>
+    </>
   );
 }
