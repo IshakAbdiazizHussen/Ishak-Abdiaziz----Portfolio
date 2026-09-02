@@ -41,7 +41,12 @@ export default async function LogPage() {
       ) : !entries || entries.length === 0 ? (
         <p className={styles.notice}>Nothing logged yet.</p>
       ) : (
-        <LogFeed entries={entries} />
+        <>
+          <LogFeed entries={entries} />
+          <p className={styles.footnote}>
+            Entry images are placeholders — swap in screenshots or plots.
+          </p>
+        </>
       )}
     </Container>
   );

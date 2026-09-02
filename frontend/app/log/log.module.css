@@ -29,6 +29,13 @@
   color: var(--text-dim);
 }
 
+.footnote {
+  margin: var(--space-lg) 0 0;
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
+
 .notice {
   padding-block: var(--space-lg);
   color: var(--text-faint);
