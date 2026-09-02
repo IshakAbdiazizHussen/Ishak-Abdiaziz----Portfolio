@@ -49,9 +49,14 @@
   overflow: hidden;
 }
 
+/* Dark by default (a touch lifted off the page); pure white under the sun. */
 .group {
   padding: var(--space-lg);
-  background: var(--bg);
+  background: #17181a;
+}
+
+:global(:root[data-theme="light"]) .group {
+  background: #ffffff;
 }
 
 .groupName {
