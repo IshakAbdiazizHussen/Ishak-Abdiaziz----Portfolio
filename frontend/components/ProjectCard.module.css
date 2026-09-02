@@ -2,10 +2,16 @@
   margin-top: var(--space-lg);
 }
 
+/* Dark by default (a touch lifted off the page); pure white under the sun —
+   matches the toolbox cards. */
 .card {
   border: var(--border-width) solid var(--border);
   border-radius: var(--radius);
-  background: var(--bg-raised);
+  background: #17181a;
+}
+
+:global(:root[data-theme="light"]) .card {
+  background: #ffffff;
 }
 
 /* ---- header ---- */
