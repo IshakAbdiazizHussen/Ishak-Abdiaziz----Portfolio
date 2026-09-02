@@ -33,6 +33,7 @@ export default function BuiltPage() {
           sub=""
           arrow="right"
           context="Log"
+          narrow
         />
       </div>
     </>

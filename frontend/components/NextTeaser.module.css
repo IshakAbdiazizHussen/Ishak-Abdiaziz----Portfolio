@@ -4,6 +4,11 @@
   padding-inline: var(--page-pad);
 }
 
+/* Aligns the rule + content with the page column (matches <Container>). */
+.wrapNarrow {
+  max-width: var(--width-page);
+}
+
 .inner {
   display: flex;
   align-items: center;

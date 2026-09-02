@@ -11,6 +11,7 @@ export function NextTeaser({
   sub = intro.next.sub as string | undefined,
   arrow = "down",
   context = "Built",
+  narrow = false,
 }: {
   href?: string;
   kicker?: string;
@@ -18,10 +19,12 @@ export function NextTeaser({
   sub?: string;
   arrow?: "down" | "right";
   context?: string;
+  /** Constrain the rule + content to the page column width instead of 82rem. */
+  narrow?: boolean;
 } = {}) {
   return (
     <section className={styles.section}>
-      <div className={styles.wrap}>
+      <div className={[styles.wrap, narrow ? styles.wrapNarrow : ""].filter(Boolean).join(" ")}>
         <Link href={href} className={styles.inner} aria-label={`${title} — ${context}`}>
           <div className={styles.body}>
             <p className={styles.kicker}>{kicker}</p>
