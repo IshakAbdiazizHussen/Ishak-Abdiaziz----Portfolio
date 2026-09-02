@@ -1,9 +1,6 @@
 import Image from "next/image";
 import type { LogEntry } from "@/lib/types";
-import { formatLogDate } from "@/lib/format";
-import { MonoLabel } from "./MonoLabel";
 import { Reveal } from "./Reveal";
-import { Tag } from "./Tag";
 import styles from "./LogEntryCard.module.css";
 
 /**
@@ -24,16 +21,13 @@ export function LogEntryCard({ entry }: { entry: LogEntry }) {
           />
         </div>
         <div className={styles.body}>
-          <MonoLabel as="div">{formatLogDate(entry.date)}</MonoLabel>
-          <h3 className={styles.title}>{entry.title}</h3>
+          <div className={styles.head}>
+            <h3 className={styles.title}>{entry.title}</h3>
+            <time className={styles.date} dateTime={entry.date}>
+              {entry.date}
+            </time>
+          </div>
           <p className={styles.description}>{entry.description}</p>
-          {entry.tags.length > 0 ? (
-            <div className={styles.tags}>
-              {entry.tags.map((tag) => (
-                <Tag key={tag}>{tag}</Tag>
-              ))}
-            </div>
-          ) : null}
         </div>
       </article>
     </Reveal>
