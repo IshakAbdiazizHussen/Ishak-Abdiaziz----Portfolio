@@ -27,7 +27,7 @@ export default async function LogPage() {
     <Container>
       <header className={styles.header}>
         <p className={styles.kicker}>Log</p>
-        <h1 className={styles.title}>Shipped, learned, broken</h1>
+        <h1 className={styles.title}>Shipped, learned, achieved</h1>
       </header>
 
       {failed ? (
