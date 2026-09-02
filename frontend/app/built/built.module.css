@@ -30,3 +30,8 @@
   line-height: 1.6;
   color: var(--text-dim);
 }
+
+/* Clear separation between the last project card and the "Next" hand-off. */
+.next {
+  margin-top: var(--space-2xl);
+}

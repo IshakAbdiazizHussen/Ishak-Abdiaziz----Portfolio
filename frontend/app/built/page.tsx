@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/Container";
+import { NextTeaser } from "@/components/NextTeaser";
 import { ProjectCard } from "@/components/ProjectCard";
-import { builtHeader, projects } from "@/content/projects";
+import { builtHeader, builtNext, projects } from "@/content/projects";
 import styles from "./built.module.css";
 
 export const metadata: Metadata = {
@@ -13,15 +14,27 @@ export const metadata: Metadata = {
 
 export default function BuiltPage() {
   return (
-    <Container>
-      <header className={styles.header}>
-        <p className={styles.kicker}>{builtHeader.kicker}</p>
-        <h1 className={styles.title}>{builtHeader.title}</h1>
-        <p className={styles.sub}>{builtHeader.sub}</p>
-      </header>
-      {projects.map((project) => (
-        <ProjectCard key={project.slug} project={project} />
-      ))}
-    </Container>
+    <>
+      <Container>
+        <header className={styles.header}>
+          <p className={styles.kicker}>{builtHeader.kicker}</p>
+          <h1 className={styles.title}>{builtHeader.title}</h1>
+          <p className={styles.sub}>{builtHeader.sub}</p>
+        </header>
+        {projects.map((project) => (
+          <ProjectCard key={project.slug} project={project} />
+        ))}
+      </Container>
+      <div className={styles.next}>
+        <NextTeaser
+          href={builtNext.href}
+          kicker={builtNext.kicker}
+          title={builtNext.title}
+          sub=""
+          arrow="right"
+          context="Log"
+        />
+      </div>
+    </>
   );
 }

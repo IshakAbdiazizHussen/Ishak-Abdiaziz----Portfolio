@@ -118,6 +118,12 @@ export const projects: Project[] = [
   },
 ];
 
+export const builtNext = {
+  kicker: "Next",
+  title: "What I shipped and learned, in order",
+  href: "/log",
+};
+
 export const builtHeader = {
   kicker: "Built",
   title: "Two projects I can defend line by line",

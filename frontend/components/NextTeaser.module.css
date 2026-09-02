@@ -50,6 +50,10 @@
   animation: next-bob 2s ease-in-out infinite;
 }
 
+.arrowRight {
+  animation-name: next-bob-x;
+}
+
 /* Fades in at the top, drifts down, fades out — then loops (the jump back is
    hidden because opacity is 0 at both ends). */
 @keyframes next-bob {
@@ -64,6 +68,22 @@
   100% {
     opacity: 0;
     transform: translateY(10px);
+  }
+}
+
+/* Same appear/disappear motion, drifting right instead of down. */
+@keyframes next-bob-x {
+  0% {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  35%,
+  65% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(10px);
   }
 }
 
