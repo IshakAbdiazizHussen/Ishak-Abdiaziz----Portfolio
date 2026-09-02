@@ -76,6 +76,7 @@ export const projects: Project[] = [
   {
     slug: "research-agent",
     name: "Research-Agent",
+    lead: true,
     stack: ["LangGraph", "Python", "Web search"],
     hook:
       "Ask a question, get an answer with numbered, clickable citations — and a run " +
