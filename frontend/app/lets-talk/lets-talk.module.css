@@ -25,6 +25,14 @@
   display: block;
 }
 
+.sub {
+  margin: var(--space-md) 0 0;
+  max-width: 56ch;
+  font-size: 1.1875rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
