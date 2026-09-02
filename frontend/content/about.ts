@@ -6,6 +6,10 @@
  * a clear arc: where it started → the turn toward AI/ML → where you are now.
  */
 export const about = {
+  header: {
+    kicker: "How I got here",
+    titleLines: ["I came in through the software side,", "and stayed for the failure cases"],
+  },
   intro: "The short version of how I ended up building AI systems for a living.",
   paragraphs: [
     "[Paragraph 1 — where it started. The first time you made a computer do something " +
