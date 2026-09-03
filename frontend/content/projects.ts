@@ -69,7 +69,7 @@ export const projects: Project[] = [
       title: "POST /predict",
       lines: ['→ { "label": "horse",', '    "confidence": 0.782,', '    "probabilities": { … 10 } }'],
     },
-    demoUrl: "https://example.com/ai-image-classifier",
+    demoUrl: "https://ai-image-classifer.vercel.app",
     demoLabel: "Try it live",
     sourceUrl: "https://github.com/your-handle/ai-image-classifier",
   },
