@@ -7,5 +7,5 @@ export const site = {
   role: "Software & AI Engineer",
   email: "ishakabdiaziz.ai@gmail.com",
   github: "https://github.com/IshakAbdiazizHussen",
-  linkedin: "https://www.linkedin.com/in/your-handle", // TODO
+  linkedin: "https://www.linkedin.com/in/ishak-abdiaziz-528426304",
 } as const;
