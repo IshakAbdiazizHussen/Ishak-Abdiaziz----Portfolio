@@ -56,7 +56,10 @@ export function Nav() {
     <header className={styles.bar}>
       <div className={styles.inner} ref={innerRef}>
         <Link href="/" className={styles.brand} aria-label="eng.portfolio — home">
-          <span className={styles.mark} aria-hidden="true" />
+          <span className={styles.mark} aria-hidden="true">
+            <span className={styles.markDot} />
+            <span className={styles.markStem} />
+          </span>
           eng.portfolio
         </Link>
 

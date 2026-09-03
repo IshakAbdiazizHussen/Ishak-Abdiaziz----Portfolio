@@ -36,11 +36,25 @@
   white-space: nowrap;
 }
 
+/* Stylised lowercase "i": amber square tittle over a light stem. */
 .mark {
-  display: block;
-  width: 0.625rem;
-  height: 0.625rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.markDot {
+  width: 6px;
+  height: 6px;
   background: var(--accent-warm);
+}
+
+.markStem {
+  width: 6px;
+  height: 18px;
+  background: var(--text);
+  border-radius: 1.5px;
 }
 
 .right {
