@@ -113,7 +113,7 @@ export const projects: Project[] = [
       title: 'run("…")',
       lines: ['→ { "answer": "…",', '    "citations": [1, 2, 3],', '    "steps": 5, "resumed": false }'],
     },
-    demoUrl: "https://example.com/research-agent",
+    demoUrl: "https://research-agent-weld.vercel.app",
     demoLabel: "Try it live",
     sourceUrl: "https://github.com/your-handle/research-agent",
   },
