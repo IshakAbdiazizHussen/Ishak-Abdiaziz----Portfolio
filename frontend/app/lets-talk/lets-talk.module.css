@@ -102,10 +102,3 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-
-.footnote {
-  margin: var(--space-md) 0 0;
-  font-family: var(--font-mono-stack);
-  font-size: var(--text-sm);
-  color: var(--text-faint);
-}

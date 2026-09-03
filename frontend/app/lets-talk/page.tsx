@@ -57,7 +57,6 @@ export default function LetsTalkPage() {
               </div>
             ))}
           </dl>
-          <p className={styles.footnote}>Placeholder handles — replace before publishing.</p>
         </div>
 
         <div className={styles.formWrap}>
