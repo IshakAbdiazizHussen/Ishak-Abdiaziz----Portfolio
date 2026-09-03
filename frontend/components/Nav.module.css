@@ -63,6 +63,21 @@
   gap: var(--space-sm);
 }
 
+.github {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  color: var(--text-dim);
+  transition: color 120ms ease;
+}
+
+.github:hover,
+.github:focus-visible {
+  color: var(--text);
+}
+
 /* Links group is centred between the content margins; brand sits left, the
    theme toggle sits right, both independent of the centred group. */
 .links {
