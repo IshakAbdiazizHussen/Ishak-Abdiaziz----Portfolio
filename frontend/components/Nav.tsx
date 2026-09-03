@@ -62,6 +62,31 @@ export function Nav() {
           </span>
         </Link>
 
+        <nav
+          id="primary-nav"
+          aria-label="Primary"
+          className={[styles.links, open ? styles.linksOpen : ""].filter(Boolean).join(" ")}
+        >
+          {LINKS.map((link) => {
+            const active = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                ref={(el) => {
+                  if (el) itemRefs.current.set(link.href, el);
+                  else itemRefs.current.delete(link.href);
+                }}
+                aria-current={active ? "page" : undefined}
+                onClick={() => setOpen(false)}
+                className={[styles.link, active ? styles.active : ""].filter(Boolean).join(" ")}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+
         <div className={styles.right}>
           <button
             type="button"
@@ -72,31 +97,6 @@ export function Nav() {
           >
             {open ? "Close" : "Menu"}
           </button>
-
-          <nav
-            id="primary-nav"
-            aria-label="Primary"
-            className={[styles.links, open ? styles.linksOpen : ""].filter(Boolean).join(" ")}
-          >
-            {LINKS.map((link) => {
-              const active = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  ref={(el) => {
-                    if (el) itemRefs.current.set(link.href, el);
-                    else itemRefs.current.delete(link.href);
-                  }}
-                  aria-current={active ? "page" : undefined}
-                  onClick={() => setOpen(false)}
-                  className={[styles.link, active ? styles.active : ""].filter(Boolean).join(" ")}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
 
           <ThemeToggle />
         </div>
