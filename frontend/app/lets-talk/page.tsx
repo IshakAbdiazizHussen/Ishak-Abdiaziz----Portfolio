@@ -11,7 +11,7 @@ const directLinks = [
   {
     label: "LinkedIn",
     href: site.linkedin,
-    display: strip(site.linkedin).replace(/^linkedin\.com\//, ""),
+    display: "linkedin.com/in/ishak-abdiaziz",
     external: true,
   },
 ];
