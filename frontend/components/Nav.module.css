@@ -63,7 +63,7 @@
   gap: var(--space-sm);
 }
 
-.github {
+.iconLink {
   display: grid;
   place-items: center;
   width: 2rem;
@@ -73,8 +73,8 @@
   transition: color 120ms ease;
 }
 
-.github:hover,
-.github:focus-visible {
+.iconLink:hover,
+.iconLink:focus-visible {
   color: var(--text);
 }
 
