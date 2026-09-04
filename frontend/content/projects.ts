@@ -67,15 +67,6 @@ export const projects: Project[] = [
       "rewrites the query and searches again before answering. Every claim in the " +
       "answer is tied to a numbered source. Graph state is checkpointed after each " +
       "node, so an interrupted run picks up from the last completed step.",
-    decision:
-      "A linear chain was easier to reason about, but one flaky search call lost the " +
-      "whole run and every token it had already spent. Modelling the agent as a graph " +
-      "with an explicit grade-and-retry loop fixed the quality problem and made the " +
-      "control flow inspectable, but a long multi-search run could still die halfway. " +
-      "I added checkpointing to the graph state — every transition is persisted — so a " +
-      "crashed or cancelled run resumes from the last good node instead of paying for " +
-      "the research twice. The cost is a state store to run and reason about; the " +
-      "benefit is that a 40-second research run is no longer all-or-nothing.",
     statsLabel: "How it behaves",
     stats: [
       { label: "Control flow", value: "Cyclic", accent: true },
