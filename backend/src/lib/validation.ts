@@ -46,3 +46,66 @@ export const newLogEntrySchema = z.object({
 });
 
 export type NewLogEntryInput = z.infer<typeof newLogEntrySchema>;
+
+/**
+ * Body schemas for `PUT /api/content/:area` (feature 13). Same discipline as
+ * `newLogEntrySchema`: every field is required/trimmed/length-capped, text is
+ * stored verbatim and escaped by the frontend on render, and image URLs are
+ * checked the same way `POST /api/log`'s `imageUrl` is. `.partial()` because a
+ * PUT may update a subset of an area's fields; `.refine` rejects an empty body
+ * rather than silently no-op-ing.
+ */
+const contentText = (max: number, label: string) =>
+  z.string().trim().min(1, `${label} is required`).max(max);
+
+/** An https URL on the blob-storage allowlist, or the empty string (unset). */
+const optionalStoredImageUrl = z.union([z.literal(""), httpsAllowlistedUrl]);
+
+/** An arbitrary https URL (GitHub/LinkedIn profile links — not blob storage). */
+const httpsUrl = z
+  .string()
+  .trim()
+  .url()
+  .refine((value) => {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, "must be an https URL");
+
+export const introContentSchema = z
+  .object({
+    headline: contentText(200, "headline"),
+    subheadline: contentText(600, "subheadline"),
+    heroPhotoUrl: optionalStoredImageUrl,
+  })
+  .strict("unrecognized field")
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, "at least one field is required");
+
+export const howIGotHereContentSchema = z
+  .object({
+    body: contentText(4000, "body"),
+    photoUrl: optionalStoredImageUrl,
+  })
+  .strict("unrecognized field")
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, "at least one field is required");
+
+export const letsTalkContentSchema = z
+  .object({
+    email: z.string().trim().email("a valid email is required").max(200),
+    githubUrl: httpsUrl,
+    linkedinUrl: httpsUrl,
+  })
+  .strict("unrecognized field")
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, "at least one field is required");
+
+/** One schema per content area, keyed the same way the route params are. */
+export const CONTENT_AREA_SCHEMAS = {
+  intro: introContentSchema,
+  "how-i-got-here": howIGotHereContentSchema,
+  "lets-talk": letsTalkContentSchema,
+} as const;
