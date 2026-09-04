@@ -73,17 +73,6 @@ export const projects: Project[] = [
       { label: "Citations", value: "Linked" },
       { label: "Resumable", value: "Yes" },
     ],
-    failuresLabel: "Failure modes I tested for",
-    failures: [
-      "A thinly-documented topic loops to the retry cap and answers from weak sources rather than admitting the gap.",
-      "Citations point at the retrieved page, not the exact passage; a moved or edited page breaks the link.",
-      "Very recent events lag the search index, so “latest” can be a few hours stale.",
-      "The grader is itself an LLM call — it can pass a confidently-wrong source that reads well.",
-    ],
-    api: {
-      title: 'run("…")',
-      lines: ['→ { "answer": "…",', '    "citations": [1, 2, 3],', '    "steps": 5, "resumed": false }'],
-    },
     demoUrl: "https://research-agent-weld.vercel.app",
     demoLabel: "Try it live",
     sourceUrl: "https://github.com/IshakAbdiazizHussen/Research-Agent-",
