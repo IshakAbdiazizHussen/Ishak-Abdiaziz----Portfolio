@@ -222,3 +222,51 @@ export const updateProjectStatSchema = z
     accent: statAccent,
   })
   .strict("unrecognized field");
+
+/**
+ * Body schemas for the toolbox_groups/toolbox_items API (feature 15). Same
+ * discipline as the Log/content/projects schemas: required/length-capped
+ * text, `.strict()` so an unknown key is a hard rejection. Deliberately has
+ * NO `previousValue`/confirm-before-save field anywhere — that mechanism is
+ * specific to constraint C18 (Built project stats) and does not apply to
+ * Toolbox, which is a curated list, not a factual/verifiable claim.
+ */
+const toolboxSortOrder = z.number().int().min(0).max(1000);
+const toolboxName = shortText(60, "name");
+const toolboxNote = z.string().trim().max(200).nullable().optional();
+
+export const newToolboxGroupSchema = z
+  .object({
+    name: toolboxName,
+    sortOrder: toolboxSortOrder.optional(),
+  })
+  .strict("unrecognized field");
+
+export const updateToolboxGroupSchema = z
+  .object({
+    name: toolboxName,
+    sortOrder: toolboxSortOrder,
+  })
+  .strict("unrecognized field")
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, "at least one field is required");
+
+export const newToolboxItemSchema = z
+  .object({
+    name: toolboxName,
+    note: toolboxNote,
+    sortOrder: toolboxSortOrder.optional(),
+  })
+  .strict("unrecognized field");
+
+/** `groupId`, if present, moves the item to a different (existing) group. */
+export const updateToolboxItemSchema = z
+  .object({
+    name: toolboxName,
+    note: toolboxNote,
+    sortOrder: toolboxSortOrder,
+    groupId: z.string().uuid(),
+  })
+  .strict("unrecognized field")
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, "at least one field is required");

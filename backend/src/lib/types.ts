@@ -59,6 +59,26 @@ export interface ProjectStat {
   accent: boolean;
 }
 
+/**
+ * Toolbox page shapes (feature 15). Exactly the JSON returned by
+ * `GET /api/toolbox` (as `{ groups: ToolboxGroup[] }`) and echoed by the
+ * write endpoints. Deliberately has NO confirm-before-save concept — that is
+ * specific to `ProjectStat` (constraint C18); a toolbox item is a curated
+ * list entry, not a factual/verifiable claim (constraint C11 does not apply
+ * here).
+ */
+export interface ToolboxItem {
+  id: string;
+  name: string;
+  note: string | null;
+}
+
+export interface ToolboxGroup {
+  id: string;
+  name: string;
+  items: ToolboxItem[];
+}
+
 export interface Project {
   id: string;
   slug: string;
