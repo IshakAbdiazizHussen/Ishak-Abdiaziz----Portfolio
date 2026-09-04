@@ -94,25 +94,34 @@ configure — is accepted deliberately and is documented in `docs/architecture.m
 
 ## How it works end-to-end (high level)
 
-- **Static content** (Intro, Built, How I Got Here, Toolbox) is hardcoded in the
-  **frontend** and rendered at build time by Next.js. It is served from Vercel's CDN
-  with **no runtime fetch to the backend**. This is the large majority of the site.
-- **The contact form** (on Let's Talk) submits directly to the backend's
-  `POST /api/contact` over HTTPS. The backend validates the input and sends an email via
-  a transactional provider (Resend or similar). Nothing is stored in a database.
-- **The Log** is the only data-backed feature — a reverse-chronological feed of
-  milestones (things learned, shipped, achieved), each with an image, title, short
-  description, and date.
-  - The **frontend Log page** fetches entries from the backend's `GET /api/log`.
-  - The **owner** (single author, password-gated) adds entries through a frontend admin
-    form that calls the backend: `POST /api/admin/login` to authenticate, then
-    `POST /api/log/upload` to store the image, then `POST /api/log` to write the row.
-  - The backend is the only thing that talks to Postgres, Redis, blob storage, and the
-    email provider.
+- **All page content is data, not code.** Intro, Built (including each project's
+  stats), How I Got Here, Toolbox, Log, and the Let's Talk contact links (email, GitHub,
+  LinkedIn) are stored in Postgres on the **backend** and fetched by the **frontend** to
+  render each page. This supersedes the previous revision, where Intro/Built/How I Got
+  Here/Toolbox were hardcoded in the frontend and the Log was the only data-backed
+  feature.
+- **Design and layout are not part of this change and are not editable.** Colors,
+  fonts, spacing, page structure, and the six-page navigation remain fixed in the
+  **frontend** codebase, exactly as already built. The admin panel changes content
+  within that fixed layout — it cannot restructure a page, add a page, or change how a
+  page looks. Altering design or layout still requires a frontend code change.
+- **A single password-gated admin panel edits everything**, field by field, including
+  images. The owner (single author) uses one login to reach every editable field across
+  every page — there is no per-page or per-feature login, and no second auth system on
+  top of the one that already protected the Log.
+- **The contact form** (on Let's Talk) is unrelated to the admin panel: it submits
+  directly to the backend's `POST /api/contact` over HTTPS so a *visitor* can message the
+  owner. The backend validates the input and sends an email via a transactional provider
+  (Resend or similar); nothing about a visitor's submission is stored in a database. This
+  is distinct from the Let's Talk **contact links** (the displayed email/GitHub/LinkedIn
+  values), which are owner-edited content like everything else on the page.
 - **Auth** is a single shared password held only by the backend (`ADMIN_PASSWORD`). On
   success the backend creates a session (session ID in Redis) and returns it to the
-  frontend as an HttpOnly, Secure cookie. There is no user table, no signup, no roles —
-  exactly one author.
+  frontend as an HttpOnly, Secure cookie. This is the same session mechanism the Log
+  feature already used, now reused to gate the entire content admin panel rather than
+  just Log entries. There is no user table, no signup, no roles — exactly one author.
+- The backend is the only thing that talks to Postgres, Redis, blob storage, and the
+  email provider.
 
 ## The two featured projects
 
@@ -188,11 +197,16 @@ features must fit one of these pages or they do not get built.
 - `frontend/` and `backend/` are independent projects, each building and deploying on
   its own.
 - All 6 pages exist, are styled per the design direction, and are responsive.
-- The four static pages build with **zero runtime calls to the backend**.
+- Every page's content is fetched from the backend at render time — there are no
+  hardcoded content pages left. Design and layout (colors, fonts, spacing, page
+  structure, the six-page navigation) remain fixed in the frontend codebase and are not
+  editable through the admin panel.
 - The contact form delivers email through the backend and handles validation and
   errors gracefully.
-- The owner can log in with the shared password (backend-issued session), add a Log
-  entry with an image, and see it appear on the public Log page.
+- The owner can log in once with the shared password (backend-issued session) and edit
+  any page's content — including project stats, toolbox entries, Log entries, and the
+  Let's Talk contact links — field by field, with images where relevant, and see the
+  change appear on the live site.
 - The backend's CORS is locked to the known frontend origins — no wildcard.
 - Redis on the backend is used only for sessions and optional short-TTL Log-list
   caching — nothing else.
