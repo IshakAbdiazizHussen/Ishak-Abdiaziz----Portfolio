@@ -23,10 +23,12 @@ export function ProjectCard({ project }: { project: Project }) {
               <p className={styles.prose}>{project.whatItDoes}</p>
             </div>
 
-            <div className={styles.block}>
-              <p className={styles.blockLabel}>One hard decision</p>
-              <p className={styles.prose}>{project.decision}</p>
-            </div>
+            {project.decision ? (
+              <div className={styles.block}>
+                <p className={styles.blockLabel}>One hard decision</p>
+                <p className={styles.prose}>{project.decision}</p>
+              </div>
+            ) : null}
 
             <div className={styles.actions}>
               <a

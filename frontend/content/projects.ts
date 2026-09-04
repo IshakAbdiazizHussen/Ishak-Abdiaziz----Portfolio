@@ -13,8 +13,8 @@ export interface Project {
   stack: string[];
   hook: string;
   whatItDoes: string;
-  /** Body of the "One hard decision" block. */
-  decision: string;
+  /** Body of the "One hard decision" block. Omit to hide the block entirely. */
+  decision?: string;
   statsLabel: string;
   stats: ProjectStat[];
   failuresLabel: string;
@@ -41,17 +41,6 @@ export const projects: Project[] = [
       "carries the argmax class, its softmax confidence and all ten probabilities, so " +
       "the interface can show a close call as a close call rather than rounding it into " +
       "certainty.",
-    decision:
-      'The first version returned only the top label, and it looked excellent — until ' +
-      'I fed it things outside the ten classes. A closed-set softmax has to answer, so ' +
-      'a photo of a pizza came back "cat" with 61% confidence and no way for the user ' +
-      'to tell that was nonsense. I had a choice: silently threshold and show ' +
-      '"unknown," which hides a real property of the model, or expose the whole ' +
-      'distribution and teach the user to read it. I went with exposing it, and made ' +
-      'the runner-up probability part of the primary result rather than a detail behind ' +
-      'a toggle. It made the product look less confident and made it far more honest — ' +
-      'and it is the reason the failure modes below are on the page instead of in a ' +
-      'notebook.',
     statsLabel: "Verified · held-out test set",
     stats: [
       { label: "Accuracy", value: "78.2%", accent: true },
