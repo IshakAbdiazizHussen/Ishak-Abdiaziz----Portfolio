@@ -266,14 +266,28 @@ Forbidden:
 - Protects **C11** (all stats and claims on the Built page must be real and
   verifiable) now that stats are editable at runtime instead of fixed in code and
   gated by a code review before a deploy.
-- Before any write to a project's stat, the admin UI must show the **old value and the
-  new value side by side** and require an **explicit confirm** action. No
-  save-on-blur, no auto-save, no "the owner can undo it later" as a substitute for
-  confirming first.
-- This is a **UI requirement**, not something the backend can enforce by validation —
-  the backend cannot tell a corrected typo from an inflated number. The confirmation
-  step is the safeguard; the backend's job is only to store exactly what the owner
-  confirmed, never to re-derive, round, or infer a value.
+- **Two layers, not one — both required, neither is a substitute for the other:**
+  1. **UI layer:** before submitting, the admin UI must show the **old value and the
+     new value side by side** and require an **explicit confirm** action. No
+     save-on-blur, no auto-save, no "the owner can undo it later" as a substitute for
+     confirming first.
+  2. **Backend layer (optimistic concurrency check):** the write request
+     (`PUT`/`POST` to a project's stats) must include the value the UI displayed and
+     the owner confirmed as current — e.g. `{ previousValue, newValue, ... }` —
+     alongside the new field values. The backend **rejects the write with `409
+     Conflict`** if the submitted `previousValue` does not **exactly** match the
+     value currently stored in `project_stats` for that row. The write proceeds only
+     on a match.
+- The backend check does **not** judge whether `newValue` is factually correct — it
+  still cannot tell a corrected typo from an inflated number, and that judgment
+  remains the owner's. What it enforces is narrower and mechanical: the confirmation
+  the owner acted on must have been grounded in the value actually stored at write
+  time, not a stale UI state or a value invented by a request that skipped the
+  confirm dialog entirely.
+- This closes a real gap the UI layer alone leaves open: a direct API call that
+  bypasses the confirmation dialog is not stopped by client-side UX. The backend
+  concurrency check is what actually prevents an unconfirmed overwrite — the UI layer
+  and the backend layer are both required together.
 - Applies to every write path that touches a project's stats: editing an existing stat
   and adding a new one (`PUT` / `POST /api/projects/:id/stats...` —
   `docs/architecture.md` §8, §11). A project's non-stat fields (hook, whatItDoes,

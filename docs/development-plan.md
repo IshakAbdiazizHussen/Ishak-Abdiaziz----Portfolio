@@ -12,6 +12,14 @@ The work is split into two tracks:
 - **FRONTEND track** — features 5–10. Scaffold, design system, static pages, and the
   pages that call the backend.
 - **CROSS-CUTTING** — features 11–12. CORS hardening and deployment of both services.
+- **CONTENT-ADMIN track** — features 13–18. Added after 1–12 were built, this is the
+  revision described in `docs/project-definition.md` and `docs/architecture.md` §3–§11
+  that makes every page's content database-backed and editable through a single admin
+  panel. Features 13–15 (backend track) add the schema + API for content_blocks,
+  projects/stats, and toolbox groups/items. Features 16–17 (frontend track) build the
+  admin sidebar shell and its per-section forms. Feature 18 (frontend track) cuts the
+  four previously-static public pages over to reading from the backend. Design and
+  layout are explicitly **not** part of this track — see constraint C17.
 
 **Dependency direction:** every frontend feature that does something dynamic depends on
 the matching backend endpoint already existing and working.
@@ -21,10 +29,15 @@ the matching backend endpoint already existing and working.
 | 8. Let's Talk (contact form) | 4. Contact endpoint |
 | 9. Log public page | 3. `GET /api/log` |
 | 10. Admin login + Log form | 2. Auth/session endpoints, 3. `POST /api/log` + `POST /api/log/upload` |
+| 16. Admin sidebar shell | 2. Auth/session endpoints (reused as-is — no new auth) |
+| 17. Admin section edit forms | 13. Content endpoints, 14. Projects/stats endpoints, 15. Toolbox endpoints |
+| 18. Public pages read from the database | 13. Content endpoints, 14. Projects/stats endpoints, 15. Toolbox endpoints |
 
 Features 5–7 (frontend scaffold, design system, static pages) have **no backend
 dependency** and can be built in parallel with the backend track if desired. The
-recommended linear order is the numbered one below.
+recommended linear order is the numbered one below. Features 13–15 similarly have no
+frontend dependency and can be built together; 16 depends only on 2 (not on 13–15) since
+the sidebar shell itself makes no content calls.
 
 ## Every feature block contains, in this order
 
@@ -60,6 +73,20 @@ their content; it points to them.
 **Cross-cutting**
 11. CORS hardening between the two services
 12. Deployment of both services & launch hardening
+
+**Content-admin track — backend**
+13. Backend content_blocks schema + API (`GET`/`PUT`)
+14. Backend projects + project_stats schema + API (`GET`/`POST`/`PUT`), with
+    confirm-before-save on stat edits
+15. Backend toolbox_groups + toolbox_items schema + API (`GET`/`POST`/`PUT`)
+
+**Content-admin track — frontend**
+16. Frontend admin sidebar shell (Intro, Built, How I Got Here, Toolbox, Log, Let's
+    Talk)
+17. Frontend admin section edit forms (Intro, Built + per-project stats with confirm
+    step, How I Got Here, Toolbox, Let's Talk)
+18. Frontend public pages (Intro, Built, How I Got Here, Toolbox) — read from the
+    database via the backend API instead of hardcoded content files
 
 ---
 
@@ -988,3 +1015,616 @@ Run this checklist against the live production URLs:
 - Lighthouse (production): performance, accessibility, best-practices, SEO all strong;
   static pages ≥ 95 performance.
 - Every "Live demo" / source link on Built resolves; 404 and error pages are styled.
+
+---
+
+## 13. Backend content_blocks schema + API
+
+**Read-first statement**
+Before starting this feature, read `docs/architecture.md`, `docs/constraints.md`,
+`docs/project-definition.md`, and this development plan in full. Do not begin
+implementation until all four are read.
+
+**Prompting**
+Tell the tool: "Implement the `content_blocks` table and its API in the backend per
+`docs/architecture.md` §3 and §7, and constraints C2, C5, C7, C9, C10 (superseded —
+read why), C17. Add a migration for
+`content_blocks (key text PRIMARY KEY, value text, image_url text, updated_at
+timestamptz)`. Seed it with the current Intro/How I Got Here/Let's Talk values that are
+today hardcoded in `frontend/content/intro.ts`, `about.ts`, and `site.ts`, so the
+migration does not blank the live site. Endpoints: `GET /api/content/:area` (public,
+`area` ∈ `{intro, how-i-got-here, lets-talk}`, returns that area's known fields) and
+`PUT /api/content/:area` (behind `requireAdmin`, validates and updates only that area's
+known keys, invalidates that area's cache key). Also `POST /api/content/upload` (auth) —
+the same MIME allowlist + magic-byte check + size limit + blob-storage upload as
+`POST /api/log/upload`, returning `{ imageUrl }`, reused for the Intro hero photo and
+How I Got Here photo fields. Reuse `requireAdmin` from feature 2 exactly — no new auth
+system."
+
+**Security**
+- Reuse `requireAdmin` (feature 2) unchanged for `PUT /api/content/:area` and
+  `POST /api/content/upload` — no new session mechanism, no new cookie, no per-area
+  login (constraint C5, `docs/architecture.md` §6/§7).
+- `GET /api/content/:area` is public and read-only, mirroring `GET /api/log`'s posture
+  exactly.
+- Server-side validation with the **same discipline as `POST /api/log`** (constraint
+  C9): one Zod schema per area with a fixed, known key set — the request can never
+  supply an arbitrary `key`; every text field is required/optional as appropriate and
+  length-capped; `imageUrl` must be `https` and its host on the blob-storage allowlist.
+- `area` is validated against a fixed enum (`intro`, `how-i-got-here`, `lets-talk`) and
+  is never used to build a table/column name dynamically — the mapping from `area` to
+  `content_blocks` keys lives in server code, not in the request.
+- The image-upload path reuses `uploadValidation.ts` and `storage.ts` from feature 3
+  verbatim — not a second, looser validator.
+- Parameterized SQL only.
+- `PUT /api/content/:area` can only write the keys that belong to the requested
+  `area` — a payload like `{ "key": "admin.something", "value": "..." }` is rejected,
+  closing an IDOR-shaped hole where a client could otherwise target an arbitrary row.
+- No design/layout fields exist anywhere in this table or schema (constraint C17) —
+  this endpoint can only ever change text/URL values the frontend already knows how to
+  render.
+
+**Implementation**
+1. `db/00X_content_blocks.sql` — the table, plus a one-time seed `INSERT` for every
+   known key (`intro.headline`, `intro.subheadline`, `intro.hero_photo_url`,
+   `how_i_got_here.body`, `lets_talk.email`, `lets_talk.github_url`,
+   `lets_talk.linkedin_url`) populated from the current hardcoded values so nothing on
+   the live site goes blank at cutover. Multi-paragraph body text is stored as one
+   string (paragraph breaks preserved) so it maps directly onto a single textarea field
+   in feature 17.
+2. `src/lib/contentRepo.ts` — `AREA_KEYS: Record<Area, string[]>` mapping each area to
+   its allowed `content_blocks` keys; `getArea(area): Promise<Record<string,string>>`
+   (`SELECT` the area's keys); `updateArea(area, fields): Promise<...>` (parameterized
+   per-key `UPDATE` inside a transaction, sets `updated_at`).
+3. `src/lib/contentCache.ts` — mirrors `logCache.ts` exactly: `cache:content:<area>`,
+   `readCachedArea`/`writeCachedArea`/`invalidateArea`, every function fail-open on a
+   Redis error.
+4. `src/routes/content.ts`:
+   - `GET /api/content/:area` — validate `area` against the enum (`404` otherwise);
+     cache lookup → hit returns it; miss/err → `getArea` → best-effort cache write →
+     `200`.
+   - `PUT /api/content/:area` — `requireAdmin`; Zod-validate the body against that
+     area's known-fields schema; `updateArea`; `invalidateArea`; `200` with the updated
+     fields.
+5. `POST /api/content/upload` (in `content.ts` or its own file) — `requireAdmin`; reuse
+   `validateImage` (feature 3); reuse `uploadImage` (feature 3); object key
+   `content/<uuid>.<ext>`; respond `200 { imageUrl }`.
+6. Wire the routes into `src/app.ts`.
+7. Shared types in `src/lib/types.ts`: `IntroContent`, `HowIGotHereContent`,
+   `LetsTalkContent`.
+
+**Guidelines**
+- `contentRepo.ts` is the only module that knows the `AREA_KEYS` mapping and touches
+  `content_blocks`; routes never hardcode a key list inline.
+- `contentCache.ts` follows `logCache.ts`'s exact shape (same function names/signatures
+  where sensible) so this reads as one caching convention across the codebase, not two.
+- The image-upload route calls the existing `uploadValidation.ts`/`storage.ts` modules
+  from feature 3 — do not fork a second validator or a second storage wrapper.
+- One Zod schema per area, colocated with the route.
+
+**Quality assurance**
+- `GET /api/content/intro` (no auth) returns the seeded values immediately after
+  migration — the current live copy, not blanks.
+- `PUT /api/content/intro` without a session → `401`, no row changed.
+- `PUT /api/content/intro` with a session and a valid body → `200`;
+  `GET /api/content/intro` reflects the change on the next call (cache invalidated).
+- `PUT /api/content/intro` with an unknown key in the body (e.g.
+  `{ "not_a_real_key": "x" }`) → rejected, no partial write.
+- `POST /api/content/upload` with a valid image → `{ imageUrl }` that resolves; a
+  renamed `.txt` → rejected; unauthenticated → `401` — verified side by side against
+  `POST /api/log/upload`'s identical behavior.
+- `GET /api/content/lets-talk` served from cache on a repeated call within the TTL; a
+  `PUT` invalidates it immediately.
+- Simulate Redis down: `GET /api/content/:area` still returns data (fail open), one DB
+  query per request.
+- `curl` an unknown `area` (`/api/content/nonsense`) → `404`, not a `500` or a raw DB
+  error.
+- Repo-wide grep confirms no second `requireAdmin`-equivalent was written — the exact
+  middleware from feature 2 is imported here.
+
+---
+
+## 14. Backend projects + project_stats schema + API (with confirm-before-save)
+
+**Read-first statement**
+Before starting this feature, read `docs/architecture.md`, `docs/constraints.md`,
+`docs/project-definition.md`, and this development plan in full. Do not begin
+implementation until all four are read.
+
+**Prompting**
+Tell the tool: "Implement the `projects` and `project_stats` tables and their API in
+the backend per `docs/architecture.md` §3 and §8, and constraints C9, C11, C17, C18.
+Migration for both tables (FK `project_stats.project_id → projects.id`), seeded from
+the current Ai-image-classifier and Research-Agent data hardcoded in
+`frontend/content/projects.ts` so the Built page's content does not change at cutover.
+Endpoints: `GET /api/projects` (public, both projects + their stats, ordered by
+`sort_order`), `PUT /api/projects/:id` (auth, non-stat fields only),
+`POST /api/projects/:id/stats` (auth, add a stat),
+`PUT /api/projects/:id/stats/:statId` (auth, edit a stat). Both stat-write endpoints
+MUST implement constraint C18's optimistic-concurrency check: the request body
+includes `previousValue`, and the backend rejects the write with `409 Conflict` unless
+`previousValue` exactly matches the value currently stored for that row (for `POST`,
+there is no current row, so `previousValue` must be absent/null). This is enforced by
+the backend as an atomic check-then-write, not merely assumed from the admin UI — read
+C18 in full before implementing, it is the point of this feature."
+
+**Security**
+- Reuse `requireAdmin` unchanged for every write here — no new auth (C5).
+- `GET /api/projects` is public and read-only.
+- Server-side validation matching the Log discipline (C9): required/length-capped text
+  fields on `projects`; `demo_url`/`source_url` must be `https`; `stack` an array of
+  short strings, capped in count and length. On `project_stats`, `label`/`value`/`note`
+  are length-capped text — `value` is stored and returned as the **exact string** the
+  owner confirmed, never parsed as a number, reformatted, or rounded (constraint C11).
+- **The C18 backend check is the security-relevant part of this feature, not an
+  optional nicety:**
+  - `PUT /api/projects/:id/stats/:statId` requires `previousValue` and the target
+    `statId` in the body; `POST /api/projects/:id/stats` requires `previousValue` to be
+    absent/null.
+  - Before writing, the handler compares the submitted `previousValue` against the
+    row's actual current `value` **atomically** — a single parameterized
+    `UPDATE ... WHERE id = $1 AND value = $2 RETURNING *` (or an equivalent
+    `SELECT ... FOR UPDATE` + compare inside one transaction), never a separate read
+    followed by a racy write.
+  - Mismatch → `409 Conflict`, **no write occurs**, and the response body includes the
+    row's actual current value so the admin UI (feature 17) can refresh its confirm
+    dialog instead of retrying blind.
+  - This is a mechanical string-equality check, never a judgment call on whether the
+    new value is "reasonable" — that stays the owner's call per C18 and C11.
+- `id`/`statId` path params are validated as UUIDs; a `statId` that does not belong to
+  the `:id` in the path → `404`, never a silent cross-project write.
+- Non-stat project field edits (`hook`, `whatItDoes`, `stack`, links, etc.) do **not**
+  require `previousValue` — the concurrency check is scoped to stats only, per C18.
+
+**Implementation**
+1. `db/00X_projects.sql` — `projects` and `project_stats` (FK,
+   `ON DELETE CASCADE`), seeded from the current two projects' real data.
+2. `src/lib/projectsRepo.ts`:
+   - `listProjects(): Promise<ProjectWithStats[]>` — ordered by `sort_order`.
+   - `updateProject(id, fields): Promise<Project>` — parameterized `UPDATE`.
+   - `createStat(projectId, { label, value, note }): Promise<Stat>` — parameterized
+     `INSERT ... RETURNING`.
+   - `updateStatIfMatches(statId, previousValue, { label, value, note }): Promise<Stat | 'conflict' | 'not_found'>`
+     — the atomic compare-and-write described above; this is the **one** function that
+     implements C18 on the backend.
+3. `src/lib/projectsCache.ts` — `cache:projects`, the same read/write/invalidate,
+   fail-open shape as `logCache.ts`/`contentCache.ts`.
+4. `src/routes/projects.ts`:
+   - `GET /api/projects` — cache → miss → `listProjects` → cache write → `200`.
+   - `PUT /api/projects/:id` — `requireAdmin`; Zod-validate non-stat fields;
+     `updateProject`; `invalidateProjects`; `200`.
+   - `POST /api/projects/:id/stats` — `requireAdmin`; Zod-validate
+     `{ label, value, note? }` (`previousValue` must be absent); `createStat`;
+     `invalidateProjects`; `201`.
+   - `PUT /api/projects/:id/stats/:statId` — `requireAdmin`; Zod-validate
+     `{ previousValue, label, value, note? }`; `updateStatIfMatches`; `'conflict'` →
+     `409` with the current value; `'not_found'` → `404`; success →
+     `invalidateProjects`; `200`.
+   - `POST /api/projects` — create a project row, gated the same way; the number of
+     projects is a product constraint enforced by policy, not by this endpoint (see
+     `docs/constraints.md` C8).
+5. Shared types in `src/lib/types.ts`: `Project`, `ProjectStat`.
+
+**Guidelines**
+- `projectsRepo.ts` is the only module that writes `projects`/`project_stats`; routes
+  never build SQL.
+- The optimistic-concurrency compare lives in exactly one function
+  (`updateStatIfMatches`) — do not duplicate the check inline in the route handler.
+- `value` is always a string end-to-end (DB column, API payload) — never coerce it to a
+  number anywhere in the backend.
+- Reuse `projectsCache.ts`'s shape from `logCache.ts`/`contentCache.ts` rather than
+  inventing a fourth caching convention.
+
+**Quality assurance**
+- `GET /api/projects` returns both seeded projects with their stats, matching the
+  current live numbers exactly (78.2% accuracy, macro F1 0.78, etc. — cross-check
+  against `docs/project-definition.md`, constraint C11).
+- `PUT /api/projects/:id` (authed, valid non-stat fields) → `200`, `GET /api/projects`
+  reflects it. Unauthenticated → `401`, no change.
+- **Confirm-before-save, happy path:** `PUT .../stats/:statId` with the correct current
+  `previousValue` → `200`, value updated, `GET /api/projects` reflects it.
+- **Confirm-before-save, stale/bypassed path:** `PUT .../stats/:statId` with a
+  `previousValue` that does **not** match the current stored value (simulating a direct
+  API call that skipped the confirm dialog, or two admins editing concurrently) →
+  `409 Conflict`, and the DB value is **unchanged** — this is the test that proves C18
+  is backend-enforced, not merely a UI convention.
+- `POST .../stats` with `previousValue` present → rejected; without it → `201`, new
+  row.
+- `PUT .../stats/:statId` for a `statId` belonging to a *different* project than `:id`
+  → `404`, not a cross-project write.
+- Concurrency: fire two conflicting `PUT`s with the same stale `previousValue` as close
+  to simultaneously as practical → exactly one succeeds, the other gets `409`.
+- Non-stat fields can be edited with no `previousValue` required — confirm the two
+  write paths are genuinely different code, not the same schema loosely enforced.
+- `GET /api/projects` served from cache on repeat calls; any successful write
+  (project field or stat) invalidates it.
+- Simulate Redis down: `GET /api/projects` still works (fail open).
+
+---
+
+## 15. Backend toolbox_groups + toolbox_items schema + API
+
+**Read-first statement**
+Before starting this feature, read `docs/architecture.md`, `docs/constraints.md`,
+`docs/project-definition.md`, and this development plan in full. Do not begin
+implementation until all four are read.
+
+**Prompting**
+Tell the tool: "Implement `toolbox_groups` and `toolbox_items` and their API in the
+backend per `docs/architecture.md` §3 and §7, and constraint C9, C17. Migration for
+both tables (FK `toolbox_items.group_id → toolbox_groups.id`), seeded from the four
+groups currently hardcoded in `frontend/content/toolbox.ts`. Endpoints:
+`GET /api/toolbox` (public, all groups with their items, ordered by `sort_order`),
+`POST /api/toolbox/groups` (auth, create a group), `PUT /api/toolbox/groups/:id` (auth,
+rename/reorder), `POST /api/toolbox/groups/:id/items` (auth, add an item),
+`PUT /api/toolbox/items/:id` (auth, edit name/note/order). No confirm-before-save here
+— that behavior is specific to Built stats (C18) and does not apply to Toolbox; do not
+copy it in."
+
+**Security**
+- Reuse `requireAdmin` unchanged for every write (C5) — no new auth.
+- `GET /api/toolbox` is public and read-only.
+- Server-side validation matching the Log discipline (C9): group `name` and item
+  `name`/`note` trimmed and length-capped; `sort_order` an integer within a sane range,
+  never accepted as a free-form string.
+- `group_id` on an item write is validated to exist before insert/update;
+  `PUT /api/toolbox/items/:id` cannot move an item to a non-existent `group_id`
+  (`404`/`400`, not a dangling FK).
+- **No confirm-before-save is required** (unlike C18/Built stats) — Toolbox entries are
+  a curated list, not factual/verifiable claims in the C11 sense. This is a deliberate,
+  documented difference, not an oversight.
+- No design/layout fields anywhere — this can only ever add/rename tools and groups,
+  never restyle the Toolbox page (C17).
+
+**Implementation**
+1. `db/00X_toolbox.sql` — `toolbox_groups` and `toolbox_items` (FK,
+   `ON DELETE CASCADE`), seeded from the current four groups.
+2. `src/lib/toolboxRepo.ts` — `listGroups(): Promise<ToolboxGroup[]>` (groups + items,
+   ordered), `createGroup`, `updateGroup`, `createItem`, `updateItem` — all
+   parameterized.
+3. `src/lib/toolboxCache.ts` — `cache:toolbox`, the same shape as the other three
+   content caches.
+4. `src/routes/toolbox.ts`:
+   - `GET /api/toolbox` — cache → miss → `listGroups` → cache write → `200`.
+   - `POST /api/toolbox/groups` — `requireAdmin`; validate `{ name, sortOrder? }`;
+     `createGroup`; invalidate; `201`.
+   - `PUT /api/toolbox/groups/:id` — `requireAdmin`; validate; `updateGroup`;
+     invalidate; `200`.
+   - `POST /api/toolbox/groups/:id/items` — `requireAdmin`; validate
+     `{ name, note?, sortOrder? }`; confirm `:id` exists; `createItem`; invalidate;
+     `201`.
+   - `PUT /api/toolbox/items/:id` — `requireAdmin`; validate; `updateItem`;
+     invalidate; `200`.
+5. Shared types in `src/lib/types.ts`: `ToolboxGroup`, `ToolboxItem`.
+
+**Guidelines**
+- `toolboxRepo.ts` is the only module touching these two tables.
+- `toolboxCache.ts` follows the exact shape of `logCache.ts`/`contentCache.ts`/
+  `projectsCache.ts` — four content caches, one convention.
+- Group/item ordering is always driven by `sort_order`, never insertion order or
+  client-side sorting.
+
+**Quality assurance**
+- `GET /api/toolbox` returns the seeded four groups with their items after migration,
+  matching what's currently on the live Toolbox page.
+- Each write endpoint: unauthenticated → `401`, no change; authed + valid → success,
+  `GET /api/toolbox` reflects it; authed + invalid (empty name, oversized note,
+  non-existent `group_id`) → rejected, no partial write.
+- Adding an item to a non-existent group → `404`, no row created.
+- `GET /api/toolbox` served from cache on repeat calls; any write invalidates it.
+- Simulate Redis down: `GET /api/toolbox` still works (fail open).
+- Confirm no `previousValue`/confirm-before-save mechanism was accidentally copied in
+  from feature 14 — Toolbox writes are plain create/update, nothing more.
+
+---
+
+## 16. Frontend admin sidebar shell
+
+**Read-first statement**
+Before starting this feature, read `docs/architecture.md`, `docs/constraints.md`,
+`docs/project-definition.md`, and this development plan in full. Do not begin
+implementation until all four are read.
+
+**Prompting**
+Tell the tool: "Build a persistent admin shell in the frontend at `/admin` per
+`docs/architecture.md` §6, replacing the single-purpose `/admin/log` route from
+feature 10 with a sidebar-driven area covering all six content sections: Intro, Built,
+How I Got Here, Toolbox, Log, Let's Talk. One `GET /api/admin/session` check gates the
+whole `/admin` tree (constraint C5) — not one login per section. The sidebar is a
+persistent layout (`app/admin/layout.tsx`); each section is its own route
+(`/admin/intro`, `/admin/built`, `/admin/how-i-got-here`, `/admin/toolbox`,
+`/admin/log`, `/admin/lets-talk`) rendered inside it. Move the existing Log admin form
+from feature 10 under this shell without changing its behavior. No design/layout
+editing anywhere in this shell (constraint C17) — it edits content only."
+
+**Security**
+- Reuses `GET /api/admin/session`, `POST /api/admin/login`, `POST /api/admin/logout`
+  from feature 2 unchanged — the sidebar shell introduces **zero new auth surface**.
+  One `credentials: 'include'` session check at the top of `app/admin/layout.tsx`
+  gates every section route beneath it (C5: still exactly one author, one login).
+- All six section routes live under `/admin/*` and inherit the existing
+  `noindex, nofollow` metadata and sitemap/robots exclusion from feature 10 — verify
+  this now applies to every new route, not just `/admin/log`.
+- No section route renders anything from the six content areas via
+  `dangerouslySetInnerHTML`; any preview text in the sidebar renders as plain text.
+- The shell itself makes no content-write calls — it only decides auth state and routes
+  to the section forms (feature 17), which do the actual reading/writing.
+- No token storage; identical to feature 10, auth state is derived only from backend
+  responses, never inferred client-side.
+
+**Implementation**
+1. `app/admin/layout.tsx` — on mount, `GET /api/admin/session`; `401` → render
+   `<AdminLogin />` (reused from feature 10) full-screen, no sidebar; `200` → render
+   `<AdminSidebar />` + `{children}`.
+2. `components/AdminSidebar` — six links: Intro, Built, How I Got Here, Toolbox, Log,
+   Let's Talk, in that fixed order (matching the public nav order, constraint C8), each
+   routing to its `/admin/<section>` page; active-section highlight; a logout button
+   (`POST /api/admin/logout`, then drop back to the login screen).
+3. `app/admin/intro/page.tsx`, `app/admin/built/page.tsx`,
+   `app/admin/how-i-got-here/page.tsx`, `app/admin/toolbox/page.tsx`,
+   `app/admin/lets-talk/page.tsx` — placeholder shells in this feature (heading +
+   "form goes here"); the real forms are feature 17.
+4. `app/admin/log/page.tsx` — the existing form from feature 10, moved under the new
+   layout with no behavior change.
+5. `/admin` (bare) redirects to `/admin/log` or a small section-picker landing —
+   owner's preference; document the choice in `backend/README.md` or
+   `frontend/README.md`.
+6. Confirm `app/admin/layout.tsx` (or every child page) carries
+   `metadata: { robots: { index: false, follow: false } }`, replacing the narrower
+   guard that used to cover only `/admin/log`.
+
+**Guidelines**
+- The sidebar shell contains **zero** business logic for any content area — it is
+  routing + auth-gating only. Each section's actual read/write logic lives in
+  feature 17's components.
+- Auth-gating happens exactly once, in `app/admin/layout.tsx` — individual section
+  pages do not re-check `GET /api/admin/session` themselves.
+- Reuse `<AdminLogin />` from feature 10 verbatim; do not fork a second login
+  component.
+- Sidebar order matches the public nav order (Intro, Built, How I Got Here, Toolbox,
+  Log, Let's Talk) so the mental model matches between visitor and owner views.
+
+**Quality assurance**
+- Logged out, visiting any `/admin/<section>` URL directly → login screen (no flash of
+  the sidebar or section content first).
+- Logged in → sidebar visible with all six links; each navigates to its section
+  without re-prompting for the password.
+- Logout from any section → back to the login screen; a direct `POST` to any admin
+  write endpoint from the browser console afterward → `401`.
+- `/admin/*` for all six sections is confirmed `noindex` and absent from
+  `sitemap.xml`/`robots.txt` (re-run feature 10's check against every new route, not
+  just `/admin/log`).
+- The moved Log form (`/admin/log`) behaves identically to before the move — feature
+  10's full happy-path QA still passes unchanged.
+- Session expiry mid-session on any section → next action `401`s → UI drops to login,
+  no crash, no stuck spinner.
+
+---
+
+## 17. Frontend admin section edit forms
+
+**Read-first statement**
+Before starting this feature, read `docs/architecture.md`, `docs/constraints.md`,
+`docs/project-definition.md`, and this development plan in full. Do not begin
+implementation until all four are read.
+
+**Prompting**
+Tell the tool: "Build the five remaining admin section forms inside the sidebar shell
+(feature 16), wired to the backend endpoints from features 13–15, per
+`docs/architecture.md` §7–§8 and constraints C9, C11, C17, C18. Intro/How I Got
+Here/Let's Talk are simple field forms (`GET`/`PUT /api/content/:area`, plus
+`POST /api/content/upload` for the two photo fields). Toolbox is a groups/items editor
+(`GET /api/toolbox`, `POST`/`PUT /api/toolbox/groups...`,
+`POST`/`PUT /api/toolbox/items...`). Built is the two projects, each with its non-stat
+fields (`PUT /api/projects/:id`) and its stats list — and every stat edit or addition
+MUST go through an explicit confirm dialog showing the old value and the new value side
+by side before any request is sent, and that request MUST include `previousValue` so
+the backend's C18 concurrency check (feature 14) can do its job. A `409` response from
+the backend (stale `previousValue`) must re-show the confirm dialog with the real
+current value, never silently retry."
+
+**Security**
+- Every write call from every section form uses `credentials: 'include'` through an
+  extended `lib/admin.ts`-style helper (extend it, don't fork it) — no new auth
+  surface, identical posture to feature 10.
+- Client-side validation in every form mirrors its backend schema for UX only (C9) —
+  the backend remains the authority; each form must handle every backend rejection
+  (`400` invalid, `401` session dropped, `409` stale confirm) with a clear,
+  non-crashing state.
+- **The stat confirm dialog is a hard requirement, not a nicety:** the "Save" action on
+  a stat field is unreachable until the confirm step has been shown and explicitly
+  accepted — there is no code path in `components/admin/ProjectStatEditor` that calls
+  `PUT`/`POST .../stats...` without first displaying old vs. new and capturing an
+  explicit confirm click (constraint C18, UI layer).
+- The confirm dialog always sends the exact `previousValue` it displayed to the owner —
+  never a value re-fetched or re-derived after the dialog opened, so what the owner
+  confirmed is exactly what's submitted.
+- On a `409 Conflict` (the stat changed between load and save — including via a
+  bypassed direct API call), the UI must **not** retry with the same `previousValue`.
+  It re-fetches the current value, re-opens the confirm dialog with the new
+  old-vs-new comparison, and requires the owner to confirm again.
+- Image fields (Intro hero photo, How I Got Here photo) use the same two-stage
+  upload-then-save pattern as the Log form: `POST /api/content/upload` first, then
+  include the returned `imageUrl` in the `PUT`. No image bytes ever touch a JSON body.
+- No section form can submit a field outside its area's known schema — the UI does not
+  offer a way to invent new fields.
+- Nothing here introduces a design/style control (no color picker, no font selector, no
+  layout toggle) — every input is a text field, a number/stat field, or an image
+  upload (constraint C17).
+
+**Implementation**
+1. Extend `lib/admin.ts` with typed calls: `getContent(area)`, `updateContent(area,
+   fields)`, `uploadContentImage(file)`, `getProjects()`, `updateProject(id, fields)`,
+   `createStat(projectId, {label,value,note})`,
+   `updateStat(projectId, statId, {previousValue,label,value,note})`, `getToolbox()`,
+   `createToolboxGroup`, `updateToolboxGroup`, `createToolboxItem`,
+   `updateToolboxItem` — each via `backendFetch(path, { auth: true, ... })`, `401`
+   mapped to the same `NotAuthenticatedError` used elsewhere.
+2. `app/admin/intro/page.tsx` + `components/admin/IntroForm` — fields: headline,
+   sub-headline, hero photo (upload + preview). Load current values via
+   `getContent('intro')`; save via `updateContent`.
+3. `app/admin/how-i-got-here/page.tsx` + `components/admin/HowIGotHereForm` — body
+   (textarea), photo (upload + preview).
+4. `app/admin/lets-talk/page.tsx` + `components/admin/LetsTalkForm` — email, GitHub
+   URL, LinkedIn URL.
+5. `app/admin/toolbox/page.tsx` + `components/admin/ToolboxEditor` — list of groups,
+   each expandable to its items; inline add-group, add-item, edit-name/note/order
+   controls; no confirm step (feature 15's QA already establishes this is
+   intentional).
+6. `app/admin/built/page.tsx` + `components/admin/ProjectEditor` (one per project) —
+   non-stat fields as a plain form (`PUT /api/projects/:id`); a
+   `components/admin/ProjectStatEditor` per stat:
+   - shows the current `label`/`value`/`note` with inline edit controls;
+   - on attempting to save a changed `value` (or `label`/`note`), opens
+     `components/admin/ConfirmStatChange` — a modal/inline panel rendering
+     "Old value: `<previousValue>`" / "New value: `<newValue>`" with distinct
+     **Confirm** / **Cancel** actions;
+   - only on Confirm does it call
+     `updateStat(projectId, statId, { previousValue, label, value, note })`;
+   - a "+ Add stat" control follows the same shape but with no `previousValue` (new
+     row) and a confirm step comparing against "— none —".
+7. A shared `components/admin/SavedIndicator` status pattern (success/error/loading)
+   reused across all five forms, matching the visual language already established by
+   `LogEntryForm` (feature 10).
+8. Every form's fields are pre-populated from its `GET` on mount, so the owner is
+   always editing real current values, never blanks.
+
+**Guidelines**
+- One form component per section; each is presentational plus a thin submit handler,
+  mirroring the existing `LogEntryForm` pattern.
+- `ConfirmStatChange` is the **only** place a stat write is triggered from — no section
+  form calls a stat-write endpoint directly.
+- All backend calls go through the extended `lib/admin.ts`; no component calls
+  `backendFetch` directly (same rule as feature 10).
+- Reuse the design tokens/components from feature 6 — this is more admin surface, not a
+  second design system.
+- Accessible dialogs: the confirm step traps focus, is dismissible via Cancel/Escape,
+  and is announced to assistive tech (`role="alertdialog"` or equivalent).
+
+**Quality assurance**
+- Each of the five forms: loads current values on mount, saves successfully with a
+  visible success state, and rejects invalid input with a clear inline error
+  (mirroring its backend's `400`).
+- Image fields: upload → preview updates → save → the area's `GET` (or a reload) shows
+  the new photo; an oversized/invalid file is rejected client-side and, if bypassed,
+  server-side (`400`), never silently accepted.
+- **Stat edit, happy path:** change a stat's value → confirm dialog shows the correct
+  old and new value → Confirm → `200` → the Built admin view and, after revalidation,
+  the public `/built` page (feature 18) show the new value.
+- **Stat edit, cancel path:** change a stat's value → confirm dialog appears → Cancel →
+  **no network call is made**, the field reverts to the stored value.
+- **Stat edit, no-bypass check:** inspect the network tab across a full stat-edit flow
+  and confirm there is exactly one `PUT .../stats/:statId` call, sent only after the
+  Confirm click — never before, never twice.
+- **Stat edit, conflict path:** change a stat's value via `curl` (or a second browser
+  tab) between loading the admin form and clicking Confirm in the first tab → the
+  first tab's save gets `409` → it shows the real current value in a fresh confirm
+  step, not a crash or a silent overwrite.
+- Toolbox editor: add a group, add an item to it, edit an item's note, reorder — each
+  reflected in `GET /api/toolbox` and on the public `/toolbox` page; no confirm dialog
+  appears anywhere in this section (by design, unlike Built stats).
+- Every write path in every form: unauthenticated (simulate a dropped session) → `401`
+  surfaces cleanly, UI drops to the login screen (per feature 16), no partial-looking
+  success state.
+- No design/style control exists anywhere in these five forms — grep the admin
+  components for anything resembling a color/font/layout input and confirm there is
+  none (constraint C17).
+
+---
+
+## 18. Frontend public pages — read from the database via the backend API
+
+**Read-first statement**
+Before starting this feature, read `docs/architecture.md`, `docs/constraints.md`,
+`docs/project-definition.md`, and this development plan in full. Do not begin
+implementation until all four are read.
+
+**Prompting**
+Tell the tool: "Convert the four previously-static pages — Intro, Built, How I Got
+Here, Toolbox — from hardcoded `frontend/content/*` to backend-fetched, ISR-cached
+content per `docs/architecture.md` §4, implementing the reversal documented in
+`docs/constraints.md` C6 (superseded): every page's content now comes from the
+backend, while every page's layout stays exactly as built in feature 7. Fetch
+`GET /api/content/intro`, `GET /api/projects`, `GET /api/content/how-i-got-here`,
+`GET /api/toolbox` respectively, each with `credentials: 'omit'` and an ISR
+`revalidate` window (or on-demand revalidation triggered by the admin writes in
+feature 17). The markup, components, and design tokens from features 6/7 do not
+change — only the data source does."
+
+**Security**
+- All four fetches are public, `credentials: 'omit'` — identical posture to the
+  existing `/log` fetch (feature 9).
+- Output-escape every field the same way `/log` already does — a backend-stored string
+  (headline, body paragraph, project hook, toolbox note) is rendered as text, never
+  `dangerouslySetInnerHTML`, even though these are owner-authored rather than visitor
+  input; defense in depth, consistent with the spirit of C9.
+- `next/image` for the two new image fields (Intro hero photo, How I Got Here photo)
+  needs the blob storage host already in `images.remotePatterns`/CSP `img-src` from
+  feature 6 — confirm no new host needs adding (same blob storage as Log/feature 3).
+- Handle backend/DB failure per page: fall back to the last successfully rendered ISR
+  output where one exists (per `docs/architecture.md` §4's failure-mode note), or a
+  clean error/empty state — never a stack trace, never a blank page.
+- No secrets involved; `NEXT_PUBLIC_BACKEND_URL` is the only config, already present
+  from feature 5.
+
+**Implementation**
+1. `lib/content.ts` (frontend) — `fetchIntro()`, `fetchProjects()`,
+   `fetchHowIGotHere()`, `fetchToolbox()`, each via
+   `backendFetch(path, { auth: false, next: { revalidate: <n> } })` (or the project's
+   chosen ISR mechanism); typed to the same shapes the admin forms in feature 17
+   read/write, defined once in `lib/types.ts`.
+2. `app/page.tsx` (Intro) — replace the `content/intro.ts` import with
+   `await fetchIntro()`; the Hero/Marquee components from feature 7 take the fetched
+   data as props instead of the hardcoded module — markup unchanged.
+3. `app/built/page.tsx` — replace `content/projects.ts` with `await fetchProjects()`;
+   `ProjectCard` takes a project (now including live stats) as a prop exactly as
+   before, just sourced differently.
+4. `app/how-i-got-here/page.tsx` — replace `content/about.ts` with
+   `await fetchHowIGotHere()`.
+5. `app/toolbox/page.tsx` — replace `content/toolbox.ts` with `await fetchToolbox()`.
+6. Retire the four now-superseded hardcoded content modules to types + local
+   dev/fallback values only, per `docs/architecture.md` §1 — do not leave two
+   competing sources of truth silently coexisting as live data.
+7. Wire on-demand revalidation: each admin write endpoint's success path (features
+   13–15's `PUT`/`POST` handlers already invalidate the Redis cache) is paired with a
+   frontend revalidation call — either the admin form triggers Next's on-demand
+   revalidation for the affected route after a successful save, or the `revalidate`
+   window is short enough that this is unnecessary; document and keep whichever
+   approach is chosen.
+8. Update `sitemap.ts`/`robots.ts` if needed — these four routes remain indexable;
+   only their data source changed, not their public-facing behavior.
+
+**Guidelines**
+- Markup, components, and design tokens from features 6–7 are **not** touched by this
+  feature — if a visual change seems necessary while doing this, that is out of scope
+  and belongs to a design-motivated feature, not this one (constraint C17).
+- Data-shaping (backend response → component props) happens in `lib/content.ts`, not
+  scattered across page components.
+- Every one of the four pages fails toward "show something reasonable," never toward a
+  crash — mirror the Log page's existing error/empty-state pattern from feature 9.
+- Keep the hardcoded `content/*.ts` files' TypeScript types as the canonical shape
+  reference during the swap (per `docs/architecture.md` §1) — don't redefine the
+  shapes from scratch.
+
+**Quality assurance**
+- All four pages render identically (content-for-content) to their pre-cutover
+  hardcoded versions immediately after migration/seed, confirming the seed data in
+  features 13–15 matches what was previously hardcoded.
+- Edit a field in the admin panel (feature 17) → the corresponding public page
+  reflects the change without a frontend redeploy — verify this end to end for at
+  least one field per page: Intro headline, a Built stat, a How I Got Here paragraph,
+  a Toolbox item.
+- A Built stat edited through the confirm-before-save flow (feature 17) appears on
+  `/built` with the exact confirmed value, unrounded (C11).
+- Network tab: each of the four pages makes exactly the expected backend call(s) on a
+  cold cache, and none on a warm ISR hit.
+- Backend stopped: each of the four pages either serves its last good ISR render or a
+  clean error state — verify per page, not just for Log.
+- `next/image` renders the new Intro hero photo and How I Got Here photo from blob
+  storage with no CSP violation and no layout shift.
+- Lighthouse on all four pages remains strong (they are no longer pure build-time SSG —
+  compare against the feature 7 baseline and note any regression rather than silently
+  accepting one).
+- Repo-wide grep: the four old hardcoded content modules are no longer imported by any
+  page component (only, where kept, referenced as types/fallback per the Guidelines
+  above).
