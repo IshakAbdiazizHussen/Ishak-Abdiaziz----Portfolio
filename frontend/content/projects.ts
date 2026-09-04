@@ -71,7 +71,7 @@ export const projects: Project[] = [
     },
     demoUrl: "https://ai-image-classifer.vercel.app",
     demoLabel: "Try it live",
-    sourceUrl: "https://github.com/your-handle/ai-image-classifier",
+    sourceUrl: "https://github.com/IshakAbdiazizHussen/Ai-image-classifer-",
   },
   {
     slug: "research-agent",
