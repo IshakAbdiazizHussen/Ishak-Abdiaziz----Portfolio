@@ -70,6 +70,17 @@ Every API call goes through `backendFetch(path, { auth })` in `lib/backend.ts`:
 The session cookie is `HttpOnly` and same-site (`ishak.dev` ↔ `api.ishak.dev` in
 production), so the frontend never reads it — it only reacts to `200` / `401`.
 
+## Admin
+
+`/admin` is a single sidebar-driven area (feature 16) covering all six content
+sections — Intro, Built, How I Got Here, Toolbox, Log, Let's Talk — behind one
+`GET /api/admin/session` check in `app/admin/layout.tsx` (via `AdminShell`). Bare
+`/admin` redirects to `/admin/log` (the owner's-preference choice over a
+section-picker landing, since Log was already the working section from feature 10).
+`AdminSidebar` provides the section links + logout; each `/admin/<section>` route is
+its own page. Only Log has a real form so far — the other five are placeholders
+until feature 17.
+
 ## Deployment (summary — see `../docs/development-plan.md` feature 12)
 
 Vercel, root directory `frontend/`, custom domain `<shared-domain>` (+ `www`). The

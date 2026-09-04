@@ -1,0 +1,12 @@
+.heading {
+  margin: 0;
+  font-size: var(--text-xl);
+  color: var(--text);
+}
+
+.body {
+  margin: var(--space-sm) 0 0;
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
