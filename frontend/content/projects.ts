@@ -115,7 +115,7 @@ export const projects: Project[] = [
     },
     demoUrl: "https://research-agent-weld.vercel.app",
     demoLabel: "Try it live",
-    sourceUrl: "https://github.com/your-handle/research-agent",
+    sourceUrl: "https://github.com/IshakAbdiazizHussen/Research-Agent",
   },
 ];
 
