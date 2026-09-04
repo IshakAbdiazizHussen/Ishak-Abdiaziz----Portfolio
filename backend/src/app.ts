@@ -12,6 +12,7 @@ import { adminRouter } from "./routes/admin";
 import { logRouter } from "./routes/log";
 import { contactRouter } from "./routes/contact";
 import { contentRouter } from "./routes/content";
+import { projectsRouter } from "./routes/projects";
 
 export function createApp(): Express {
   const app = express();
@@ -48,6 +49,7 @@ export function createApp(): Express {
   app.use("/api/log", logRouter);
   app.use("/api/contact", contactRouter);
   app.use("/api/content", contentRouter);
+  app.use("/api/projects", projectsRouter);
 
   app.use(notFound);
   app.use(errorHandler);

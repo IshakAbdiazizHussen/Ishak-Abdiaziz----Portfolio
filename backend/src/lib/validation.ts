@@ -61,8 +61,11 @@ const contentText = (max: number, label: string) =>
 /** An https URL on the blob-storage allowlist, or the empty string (unset). */
 const optionalStoredImageUrl = z.union([z.literal(""), httpsAllowlistedUrl]);
 
-/** An arbitrary https URL (GitHub/LinkedIn profile links — not blob storage). */
-const httpsUrl = z
+/**
+ * An arbitrary https URL (GitHub/LinkedIn profile links, project demo/source
+ * links — not blob storage, so `isAllowedImageHost` does not apply here).
+ */
+export const httpsUrl = z
   .string()
   .trim()
   .url()
@@ -109,3 +112,113 @@ export const CONTENT_AREA_SCHEMAS = {
   "how-i-got-here": howIGotHereContentSchema,
   "lets-talk": letsTalkContentSchema,
 } as const;
+
+/**
+ * Body schemas for the projects/project_stats API (feature 14). Same
+ * discipline as the other feature schemas: required/length-capped text,
+ * `.strict()` so an unknown key is a hard rejection (not silently dropped),
+ * and `demoUrl`/`sourceUrl` reuse `httpsUrl` — these point at deployed apps
+ * and GitHub repos, not blob storage, so `httpsAllowlistedUrl` does not apply
+ * here.
+ *
+ * `value` on a stat is always treated as an opaque display string — never
+ * parsed as a number, reformatted, or rounded (constraint C11).
+ */
+export const uuidParam = z.string().uuid();
+
+const shortText = (max: number, label: string) =>
+  z.string().trim().min(1, `${label} is required`).max(max);
+
+const stackArray = z.array(z.string().trim().min(1).max(40)).max(12, "at most 12 stack items");
+
+const statLabel = shortText(60, "label");
+const statValue = shortText(120, "value");
+/** An optional annotation shown next to a stat (e.g. "deer — weakest class"). */
+const statNote = z.string().trim().max(200).nullable().optional();
+const statAccent = z.boolean().optional();
+
+const apiLines = z.array(z.string().trim().max(200)).max(20, "at most 20 lines").nullable();
+
+export const updateProjectSchema = z
+  .object({
+    name: shortText(120, "name"),
+    lead: z.boolean(),
+    stack: stackArray,
+    hook: shortText(400, "hook"),
+    whatItDoes: shortText(1000, "whatItDoes"),
+    decision: z.string().trim().max(2000).nullable(),
+    statsLabel: shortText(80, "statsLabel"),
+    failuresLabel: z.string().trim().max(80).nullable(),
+    failures: z.array(z.string().trim().max(300)).max(10, "at most 10 failures").nullable(),
+    apiTitle: z.string().trim().max(80).nullable(),
+    apiLines,
+    demoUrl: httpsUrl,
+    demoLabel: shortText(40, "demoLabel"),
+    sourceUrl: httpsUrl,
+    sortOrder: z.number().int().min(0).max(1000),
+  })
+  .strict("unrecognized field")
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, "at least one field is required");
+
+export const newProjectSchema = z
+  .object({
+    slug: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .regex(/^[a-z0-9][a-z0-9-]{0,59}$/, "slug must be a short lowercase-and-hyphens slug"),
+    name: shortText(120, "name"),
+    lead: z.boolean().default(false),
+    stack: stackArray.default([]),
+    hook: shortText(400, "hook"),
+    whatItDoes: shortText(1000, "whatItDoes"),
+    decision: z.string().trim().max(2000).nullable().default(null),
+    statsLabel: shortText(80, "statsLabel"),
+    failuresLabel: z.string().trim().max(80).nullable().default(null),
+    failures: z
+      .array(z.string().trim().max(300))
+      .max(10, "at most 10 failures")
+      .nullable()
+      .default(null),
+    apiTitle: z.string().trim().max(80).nullable().default(null),
+    apiLines: apiLines.default(null),
+    demoUrl: httpsUrl,
+    demoLabel: shortText(40, "demoLabel").default("Try it live"),
+    sourceUrl: httpsUrl,
+    sortOrder: z.number().int().min(0).max(1000).default(0),
+  })
+  .strict("unrecognized field");
+
+/**
+ * POST /api/projects/:id/stats — a brand-new stat row. `previousValue` must
+ * be absent or `null`: there is nothing yet stored to confirm against
+ * (constraint C18).
+ */
+export const newProjectStatSchema = z
+  .object({
+    label: statLabel,
+    value: statValue,
+    note: statNote,
+    accent: statAccent,
+    previousValue: z.literal(null).optional(),
+  })
+  .strict("unrecognized field");
+
+/**
+ * PUT /api/projects/:id/stats/:statId — constraint C18. `previousValue` is
+ * REQUIRED here; the route/repo compares it against the row's actual current
+ * `value` atomically and rejects the write with 409 on a mismatch. This
+ * schema only checks the field is present and shaped like a stat value — the
+ * actual concurrency check happens in `projectsRepo.updateStatIfMatches`, not
+ * here.
+ */
+export const updateProjectStatSchema = z
+  .object({
+    previousValue: statValue,
+    label: statLabel,
+    value: statValue,
+    note: statNote,
+    accent: statAccent,
+  })
+  .strict("unrecognized field");

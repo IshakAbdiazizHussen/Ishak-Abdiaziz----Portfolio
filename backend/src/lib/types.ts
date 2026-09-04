@@ -44,3 +44,37 @@ export interface LetsTalkContent {
   githubUrl: string;
   linkedinUrl: string;
 }
+
+/**
+ * Built page shapes (feature 14). `ProjectStat.value` is always an opaque
+ * display string — never a parsed number (constraint C11). Exactly the JSON
+ * returned by `GET /api/projects` (as `{ projects: Project[] }`) and echoed
+ * by the write endpoints. The frontend depends on this contract.
+ */
+export interface ProjectStat {
+  id: string;
+  label: string;
+  value: string;
+  note: string | null;
+  accent: boolean;
+}
+
+export interface Project {
+  id: string;
+  slug: string;
+  name: string;
+  lead: boolean;
+  stack: string[];
+  hook: string;
+  whatItDoes: string;
+  decision: string | null;
+  statsLabel: string;
+  failuresLabel: string | null;
+  failures: string[] | null;
+  apiTitle: string | null;
+  apiLines: string[] | null;
+  demoUrl: string;
+  demoLabel: string;
+  sourceUrl: string;
+  stats: ProjectStat[];
+}
