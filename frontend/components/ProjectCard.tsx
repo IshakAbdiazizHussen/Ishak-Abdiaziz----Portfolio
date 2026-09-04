@@ -69,19 +69,23 @@ export function ProjectCard({ project }: { project: Project }) {
               </dl>
             </div>
 
-            <div className={styles.panel}>
-              <p className={styles.panelLabel}>{project.failuresLabel}</p>
-              <ul className={styles.failList}>
-                {project.failures.map((failure) => (
-                  <li key={failure}>{failure}</li>
-                ))}
-              </ul>
-            </div>
+            {project.failuresLabel && project.failures && project.failures.length > 0 ? (
+              <div className={styles.panel}>
+                <p className={styles.panelLabel}>{project.failuresLabel}</p>
+                <ul className={styles.failList}>
+                  {project.failures.map((failure) => (
+                    <li key={failure}>{failure}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
-            <div className={[styles.panel, styles.codePanel].join(" ")}>
-              <p className={styles.codeTitle}>{project.api.title}</p>
-              <pre className={styles.code}>{project.api.lines.join("\n")}</pre>
-            </div>
+            {project.api ? (
+              <div className={[styles.panel, styles.codePanel].join(" ")}>
+                <p className={styles.codeTitle}>{project.api.title}</p>
+                <pre className={styles.code}>{project.api.lines.join("\n")}</pre>
+              </div>
+            ) : null}
           </aside>
         </div>
       </article>

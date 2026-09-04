@@ -17,9 +17,11 @@ export interface Project {
   decision?: string;
   statsLabel: string;
   stats: ProjectStat[];
-  failuresLabel: string;
-  failures: string[];
-  api: { title: string; lines: string[] };
+  /** Omit both to hide the failure-modes panel entirely. */
+  failuresLabel?: string;
+  failures?: string[];
+  /** Omit to hide the code-sample panel entirely. */
+  api?: { title: string; lines: string[] };
   /** TODO: replace with the real deployed URLs before launch. */
   demoUrl: string;
   demoLabel: string;
@@ -47,17 +49,6 @@ export const projects: Project[] = [
       { label: "Macro F1", value: "0.78" },
       { label: "Classes", value: "10" },
     ],
-    failuresLabel: "Failure modes I tested for",
-    failures: [
-      "Cat and dog account for the largest share of error; they are confused with each other, not with vehicles.",
-      "Bird against a plain sky is read as airplane more often than any other cross-group mistake.",
-      "Out-of-domain inputs are still forced into one of ten labels — low confidence is the only signal, and it is not calibrated.",
-      "Screenshots and renders are out of distribution; the model was trained on low-resolution photographs.",
-    ],
-    api: {
-      title: "POST /predict",
-      lines: ['→ { "label": "horse",', '    "confidence": 0.782,', '    "probabilities": { … 10 } }'],
-    },
     demoUrl: "https://ai-image-classifer.vercel.app",
     demoLabel: "Try it live",
     sourceUrl: "https://github.com/IshakAbdiazizHussen/Ai-image-classifer-",
