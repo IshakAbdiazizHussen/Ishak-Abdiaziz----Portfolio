@@ -26,7 +26,7 @@ function buildCsp(isDev: boolean): string {
     "form-action 'self'",
     "frame-ancestors 'none'",
     "object-src 'none'",
-    "img-src 'self' data: https://*.blob.vercel-storage.com",
+    `img-src 'self' data: https://*.blob.vercel-storage.com ${backendUrl}`.trim(),
     "font-src 'self'",
     "style-src 'self' 'unsafe-inline'",
     `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,

@@ -3,17 +3,25 @@ import type { LogEntry } from "@/lib/types";
 import { Reveal } from "./Reveal";
 import styles from "./LogEntryCard.module.css";
 
-/**
- * `next/image` only accepts the Vercel Blob hosts allowed in next.config.ts —
- * anything else (empty, an example URL, a dead link) falls back to the hatch
- * placeholder rather than rendering a broken image.
- */
+const BACKEND_ORIGIN = (process.env.NEXT_PUBLIC_BACKEND_URL ?? "").replace(/\/+$/, "");
+
+/** A URL produced by the upload endpoint: Vercel Blob, or the local-dev driver. */
 function isStoredFile(url: string): boolean {
+  return isBlobHosted(url) || isLocalUpload(url);
+}
+
+/** Vercel Blob host — eligible for `next/image` (allow-listed in next.config.ts). */
+function isBlobHosted(url: string): boolean {
   try {
     return /\.blob\.vercel-storage\.com$/.test(new URL(url).hostname);
   } catch {
     return false;
   }
+}
+
+/** The backend's local storage driver: `${NEXT_PUBLIC_BACKEND_URL}/uploads/...`. */
+function isLocalUpload(url: string): boolean {
+  return BACKEND_ORIGIN !== "" && url.startsWith(`${BACKEND_ORIGIN}/uploads/`);
 }
 
 /** A stored attachment can be a PDF (plots/reports) rather than an image. */
@@ -46,7 +54,7 @@ export function LogEntryCard({ entry }: { entry: LogEntry }) {
               <span className={styles.pdfLabel}>PDF</span>
               <span className={styles.pdfHint}>Open ↗</span>
             </a>
-          ) : (
+          ) : isBlobHosted(entry.imageUrl) ? (
             <Image
               src={entry.imageUrl}
               alt=""
@@ -54,6 +62,10 @@ export function LogEntryCard({ entry }: { entry: LogEntry }) {
               sizes="(max-width: 700px) 100vw, 15rem"
               className={styles.image}
             />
+          ) : (
+            // Local-dev upload driver — not an allow-listed next/image host.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={entry.imageUrl} alt="" className={styles.imageEl} />
           )}
         </div>
         <div className={styles.body}>

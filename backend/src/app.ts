@@ -2,10 +2,11 @@ import express, { type Express } from "express";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
-import { config } from "./config";
+import { config, storageDriver } from "./config";
 import { logger } from "./lib/logger";
 import { pingDb } from "./lib/db";
 import { pingRedis } from "./lib/redis";
+import { LOCAL_UPLOAD_DIR } from "./lib/storage";
 import { corsMiddleware } from "./middleware/cors";
 import { notFound, errorHandler } from "./middleware/errorHandler";
 import { adminRouter } from "./routes/admin";
@@ -45,6 +46,22 @@ export function createApp(): Express {
     const ok = db && cache;
     res.status(ok ? 200 : 503).json({ ok, postgres: db, redis: cache });
   });
+
+  // Local storage driver: serve previously-uploaded files read-only. Keys are
+  // server-generated UUIDs, so the content is immutable and long-cacheable.
+  // Missing files fall through to the 404 handler.
+  if (storageDriver === "local") {
+    app.use(
+      "/uploads",
+      express.static(LOCAL_UPLOAD_DIR, {
+        index: false,
+        dotfiles: "ignore",
+        immutable: true,
+        maxAge: "365d",
+      }),
+    );
+    logger.info({ dir: LOCAL_UPLOAD_DIR }, "storage: local driver — uploads served at /uploads");
+  }
 
   app.use("/api/admin", adminRouter);
   app.use("/api/log", logRouter);

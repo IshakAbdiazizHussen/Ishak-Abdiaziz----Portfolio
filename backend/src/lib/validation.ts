@@ -1,15 +1,21 @@
 import { z } from "zod";
-import { config } from "../config";
+import { config, publicBaseUrl, storageDriver } from "../config";
 
 /** True if `host` equals an allowed host or is a subdomain of one. */
 export function isAllowedImageHost(host: string): boolean {
   return config.BLOB_ALLOWED_HOSTS.some((h) => host === h || host.endsWith(`.${h}`));
 }
 
+/** True for a local-driver upload URL (`${publicBaseUrl}/uploads/...`, dev only). */
+function isLocalUploadUrl(value: string): boolean {
+  return storageDriver === "local" && value.startsWith(`${publicBaseUrl}/uploads/`);
+}
+
 const httpsAllowlistedUrl = z
   .string()
   .url()
   .refine((value) => {
+    if (isLocalUploadUrl(value)) return true;
     let url: URL;
     try {
       url = new URL(value);
@@ -17,7 +23,7 @@ const httpsAllowlistedUrl = z
       return false;
     }
     return url.protocol === "https:" && isAllowedImageHost(url.host);
-  }, "imageUrl must be an https URL on an allowed storage host");
+  }, "imageUrl must be a URL returned by the upload endpoint");
 
 const tag = z
   .string()

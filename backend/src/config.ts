@@ -80,8 +80,24 @@ const schema = z.object({
   // --- Log-list cache ---
   LOG_CACHE_TTL_SECONDS: z.coerce.number().int().positive().max(600).default(45),
 
-  // --- Image storage (required — the upload endpoint needs it) ---
-  BLOB_READ_WRITE_TOKEN: z.string().min(1, "BLOB_READ_WRITE_TOKEN is required"),
+  // --- File storage ---
+  // A real Vercel Blob token selects the "blob" driver. Empty — or the historic
+  // "vercel_blob_rw_DUMMYTOKEN" placeholder — falls back to the "local" driver,
+  // which writes uploads under backend/uploads/ and serves them at /uploads.
+  // Fine for local development; a deployed instance needs the Blob token
+  // (local disk is ephemeral on most hosts).
+  BLOB_READ_WRITE_TOKEN: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v && v !== "vercel_blob_rw_DUMMYTOKEN" ? v : undefined)),
+  // Public origin this backend is reachable at — used to build URLs for
+  // locally-stored uploads. Defaults to http://localhost:<PORT>.
+  PUBLIC_BASE_URL: z
+    .string()
+    .url()
+    .optional()
+    .transform((v) => (v ? v.replace(/\/+$/, "") : undefined)),
   // Hosts allowed in a stored image_url. A bare host also matches its subdomains
   // (Vercel Blob serves from <id>.public.blob.vercel-storage.com).
   BLOB_ALLOWED_HOSTS: csv.default("blob.vercel-storage.com"),
@@ -113,3 +129,17 @@ export const config: Config = load();
 
 export const isProd = config.NODE_ENV === "production";
 export const isTest = config.NODE_ENV === "test";
+
+/** "blob" when a real Vercel Blob token is set, otherwise the local-disk driver. */
+export const storageDriver: "blob" | "local" = config.BLOB_READ_WRITE_TOKEN ? "blob" : "local";
+
+/** Origin used to build public URLs for locally-stored uploads. */
+export const publicBaseUrl = config.PUBLIC_BASE_URL ?? `http://localhost:${config.PORT}`;
+
+if (isProd && storageDriver === "local") {
+  // eslint-disable-next-line no-console
+  console.warn(
+    "[config] BLOB_READ_WRITE_TOKEN is not set — uploads will be written to local disk, " +
+      "which is ephemeral on most hosts. Set a Vercel Blob token for production.",
+  );
+}
