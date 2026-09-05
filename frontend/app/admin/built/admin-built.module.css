@@ -1,0 +1,10 @@
+.notice {
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
+
+.error {
+  font-size: var(--text-sm);
+  color: var(--danger);
+}

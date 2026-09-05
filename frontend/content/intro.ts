@@ -1,4 +1,14 @@
-/** Intro (landing) page content. The headline is fixed — do not paraphrase. */
+/**
+ * Intro (landing) page content. The headline is fixed — do not paraphrase.
+ *
+ * Feature 18: `subheadline` and (indirectly, via an empty-string default) the
+ * hero photo are now backend-fetched — see `lib/content.ts#fetchIntro`. This
+ * module still supplies: (a) the fallback values `app/page.tsx` uses if the
+ * backend/DB is unreachable, and (b) everything NOT in the Intro
+ * content-area schema (kicker, the exact 3-line headline break, CTAs, the
+ * marquee list, the Built hand-off, hero stats) — none of that is
+ * owner-editable via the admin panel, by design (constraint C17).
+ */
 export const intro = {
   kicker: "Software and AI Engineer",
   headline: "I build AI systems, then try to break them before anyone else does.",

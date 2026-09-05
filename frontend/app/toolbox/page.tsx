@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/Container";
-import { toolbox, toolboxHeader, toolboxNote } from "@/content/toolbox";
+import { toolbox as fallbackToolbox, toolboxHeader, toolboxNote } from "@/content/toolbox";
+import { fetchToolbox } from "@/lib/content";
 import styles from "./toolbox.module.css";
 
 export const metadata: Metadata = {
@@ -8,7 +9,20 @@ export const metadata: Metadata = {
   description: "An honest, grouped list of the technologies I actually use.",
 };
 
-export default function ToolboxPage() {
+export default async function ToolboxPage() {
+  // Feature 18: the groups + items are backend-fetched. `fallbackToolbox` (the
+  // old hardcoded array) is used verbatim if the backend/DB is unreachable —
+  // the page must never look broken. toolboxHeader/toolboxNote are page
+  // chrome, not part of the toolbox content-area schema, and stay hardcoded
+  // either way.
+  let toolbox = fallbackToolbox;
+  try {
+    const fetched = await fetchToolbox();
+    if (fetched.length > 0) toolbox = fetched;
+  } catch {
+    // Backend/DB unreachable — keep the hardcoded fallback above.
+  }
+
   return (
     <>
       <Container>

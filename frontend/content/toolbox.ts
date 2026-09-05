@@ -11,6 +11,14 @@ export interface ToolGroup {
 /**
  * Honest, grouped list. Rule: if it's here, you can be quizzed on it in an
  * interview. Trim or adjust to match what's actually true for you.
+ *
+ * Feature 18: `app/toolbox/page.tsx` now fetches groups/items from the
+ * backend via `lib/content.ts#fetchToolbox`, which reshapes the raw API
+ * response (whose group field is named `name`) into exactly this
+ * `ToolGroup`/`Tool` shape. The `toolbox` array below is now the fallback
+ * used if the backend/DB is unreachable; `toolboxHeader`/`toolboxNote` are
+ * page chrome, not part of the toolbox content-area schema, and stay
+ * hardcoded either way.
  */
 export const toolboxHeader = {
   kicker: "Toolbox",

@@ -1,9 +1,14 @@
 /**
  * How I Got Here — a short, human background. NOT a resume.
  *
- * This is a fill-in template. Replace every bracketed line with your own words
- * before launch. Aim for ~250–350 words total, first person, plain voice, with
- * a clear arc: where it started → the turn toward AI/ML → where you are now.
+ * Feature 18: `paragraphs` is now backend-fetched — see
+ * `lib/content.ts#fetchHowIGotHere` (the DB stores it as one string split on
+ * blank lines; this array is the fallback `app/how-i-got-here/page.tsx` uses
+ * if the backend/DB is unreachable). `header` and `facts` are page chrome,
+ * not part of the how-i-got-here content-area schema, and stay hardcoded
+ * either way. The backend also has a `photoUrl` field for this area, but
+ * this page has no rendered image slot (it didn't before feature 18 either),
+ * so it isn't wired in yet.
  */
 export const about = {
   header: {

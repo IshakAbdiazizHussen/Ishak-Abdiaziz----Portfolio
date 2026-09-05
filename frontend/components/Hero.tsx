@@ -5,7 +5,21 @@ import { HeroPortrait } from "./HeroPortrait";
 import { Reveal } from "./Reveal";
 import styles from "./Hero.module.css";
 
-export function Hero() {
+/**
+ * `subheadline`/`heroPhotoUrl` come from the backend (feature 18,
+ * `lib/content.ts`'s `fetchIntro()`) with the exact hardcoded values as
+ * defaults — everything else here (kicker, the exact 3-line headline break,
+ * CTAs, hero stats) is not part of the Intro content-area schema (feature
+ * 13 scoped it to headline/subheadline/hero photo only) and stays sourced
+ * from `content/intro.ts` unchanged, same as before feature 18.
+ */
+export function Hero({
+  subheadline = intro.subheadline,
+  heroPhotoUrl = "",
+}: {
+  subheadline?: string;
+  heroPhotoUrl?: string;
+} = {}) {
   return (
     <Reveal>
       <div className={styles.hero}>
@@ -19,7 +33,7 @@ export function Hero() {
               </Fragment>
             ))}
           </h1>
-          <p className={styles.sub}>{intro.subheadline}</p>
+          <p className={styles.sub}>{subheadline}</p>
 
           <div className={styles.actions}>
             <Link href={intro.primaryCta.href} className={styles.cta}>
@@ -44,7 +58,7 @@ export function Hero() {
         </div>
 
         <div className={styles.media}>
-          <HeroPortrait />
+          <HeroPortrait src={heroPhotoUrl || undefined} />
         </div>
       </div>
     </Reveal>

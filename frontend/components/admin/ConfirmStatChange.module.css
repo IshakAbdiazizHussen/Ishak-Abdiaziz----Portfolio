@@ -1,0 +1,40 @@
+.dialog {
+  margin-top: var(--space-2xs);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-inset);
+  border: var(--border-width) solid var(--accent-warm);
+  border-radius: var(--radius);
+}
+
+.title {
+  margin: 0 0 var(--space-sm);
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+  margin: 0 0 var(--space-md);
+}
+
+.compare dt {
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+}
+
+.compare dd {
+  margin: var(--space-3xs) 0 0;
+  font-size: var(--text-base);
+  color: var(--text);
+  word-break: break-word;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-sm);
+}

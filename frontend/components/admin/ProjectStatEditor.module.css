@@ -1,0 +1,56 @@
+.row {
+  padding: var(--space-sm) 0;
+  border-top: var(--border-width) solid var(--border);
+}
+
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-sm);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  min-width: 8rem;
+}
+
+.field span {
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-xs);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.field input {
+  padding: var(--space-2xs) var(--space-xs);
+  font-family: var(--font-sans-stack);
+  font-size: var(--text-sm);
+  color: var(--text);
+  background: var(--bg-inset);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius);
+}
+
+.field input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+.accentField {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  font-size: var(--text-sm);
+  color: var(--text-dim);
+}
+
+.error {
+  margin-top: var(--space-2xs);
+  font-size: var(--text-sm);
+  color: var(--danger);
+}

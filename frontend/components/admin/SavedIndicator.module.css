@@ -1,0 +1,17 @@
+.status {
+  margin-top: var(--space-sm);
+  font-size: var(--text-sm);
+  color: var(--text-dim);
+}
+
+.status:empty {
+  margin-top: 0;
+}
+
+.ok {
+  color: var(--accent);
+}
+
+.bad {
+  color: var(--danger);
+}

@@ -1,3 +1,12 @@
+/**
+ * Feature 18: `app/built/page.tsx` now fetches projects (incl. stats) from
+ * the backend via `lib/content.ts#fetchProjects`, which reshapes the raw API
+ * response into exactly these two interfaces — the canonical shape
+ * `ProjectCard` renders, unchanged. The `projects` array below is now the
+ * fallback `app/built/page.tsx` uses if the backend/DB is unreachable;
+ * `builtHeader`/`builtNext` are Built-page chrome, not part of the projects
+ * content-area schema, and stay hardcoded either way.
+ */
 export interface ProjectStat {
   label: string;
   value: string;

@@ -1,0 +1,84 @@
+/* Shared by IntroForm, HowIGotHereForm, LetsTalkForm — same field styling as
+   LogEntryForm (feature 10), so the whole admin area reads as one form
+   convention rather than several. */
+
+.form {
+  max-width: 38rem;
+}
+
+.fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fieldset:disabled {
+  opacity: 0.6;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  margin-bottom: var(--space-md);
+}
+
+.field label {
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-xs);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  padding: var(--space-2xs) var(--space-xs);
+  font-family: var(--font-sans-stack);
+  font-size: var(--text-base);
+  color: var(--text);
+  background: var(--bg-inset);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius);
+}
+
+.field input[type="file"] {
+  padding: var(--space-2xs);
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-sm);
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 6rem;
+}
+
+.field input:focus-visible,
+.field textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+.field input[aria-invalid="true"],
+.field textarea[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.error {
+  font-size: var(--text-sm);
+  color: var(--danger);
+}
+
+.notice {
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
+
+.preview {
+  margin-top: var(--space-2xs);
+  max-width: 20rem;
+  border: var(--border-width) solid var(--border);
+}

@@ -22,6 +22,13 @@ export class BackendError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    /**
+     * The parsed JSON response body, if any — e.g. a 409 from
+     * `PUT /api/projects/:id/stats/:statId` carries `{ currentValue }`
+     * alongside `error`. Callers that need more than the message read it
+     * from here rather than re-fetching.
+     */
+    readonly body: unknown = null,
   ) {
     super(message);
     this.name = "BackendError";
@@ -50,7 +57,7 @@ export async function backendFetch<T = unknown>(
       body && typeof body === "object" && "error" in body && typeof body.error === "string"
         ? body.error
         : `Request failed (${res.status})`;
-    throw new BackendError(res.status, message);
+    throw new BackendError(res.status, message, body);
   }
 
   return body as T;
