@@ -1,209 +1,69 @@
 /*
- * Login-screen-only styling. Soft rounded corners and a dark gradient — a
- * deliberate, acknowledged departure from the site's sharp-edged tokens,
- * scoped to this file. Local `--login-*` custom properties carry the palette
- * so the light-theme block only has to restate the values.
+ * Login screen: a single compact card centred on the site's normal
+ * background. Dimensions, tokens and the mono-label / sans-button split are
+ * lifted straight from `ContactForm.module.css` so this matches the rest of
+ * the site rather than introducing anything new.
  */
 
 .screen {
-  --login-glow: rgba(92, 140, 255, 0.16);
-  --login-bg-1: #14141a;
-  --login-bg-2: #0b0b0d;
-  --login-container: linear-gradient(180deg, #17171d 0%, #101013 100%);
-  --login-border: #26262e;
-  --login-eyebrow: #7aa2ff;
-  --login-headline: #f4f4f6;
-  --login-lede: #a4a4ad;
-  --login-accent: #2f6bff;
-  --login-accent-2: #1c4bd6;
-  --login-card: #17171c;
-  --login-card-border: #30303a;
-  --login-label: #bcbcc4;
-  --login-input-bg: #0e0e12;
-  --login-input-border: #35353f;
-
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 80vh;
-  margin-top: calc(-1 * var(--space-lg));
-  padding: clamp(1.5rem, 5vw, 4rem) var(--page-pad);
-  background:
-    radial-gradient(55rem 38rem at 50% -12%, var(--login-glow), transparent 62%),
-    linear-gradient(180deg, var(--login-bg-1), var(--login-bg-2));
+  min-height: 70vh;
+  padding: var(--space-lg) var(--page-pad);
 }
 
-:global(:root[data-theme="light"]) .screen {
-  --login-glow: rgba(31, 92, 240, 0.1);
-  --login-bg-1: #f4f1eb;
-  --login-bg-2: #ece7dc;
-  --login-container: linear-gradient(180deg, #ffffff 0%, #f6f3ec 100%);
-  --login-border: #ddd6c6;
-  --login-eyebrow: #1d4fd8;
-  --login-headline: #17150f;
-  --login-lede: #5c574c;
-  --login-card: #ffffff;
-  --login-card-border: #ddd6c6;
-  --login-label: #4a463c;
-  --login-input-bg: #faf8f3;
-  --login-input-border: #cfc7b3;
-}
-
-.container {
-  position: relative;
+.card {
   width: 100%;
-  max-width: 64rem;
-  padding: clamp(1.75rem, 4vw, 3rem);
-  background: var(--login-container);
-  border: 1px solid var(--login-border);
-  border-radius: 24px;
-  box-shadow: 0 40px 80px -44px rgba(0, 0, 0, 0.55);
+  max-width: 22rem;
+  padding: var(--space-lg);
+  background: var(--bg-raised);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
 }
 
-.themeSlot {
-  position: absolute;
-  top: clamp(1.25rem, 3vw, 2rem);
-  right: clamp(1.25rem, 3vw, 2rem);
+.legend {
+  margin: 0 0 var(--space-md);
+  font-family: var(--font-sans-stack);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
 }
 
-.themeSlot button {
-  width: 2.5rem;
-  height: 2.5rem;
-  border: 1px solid var(--login-border);
-  border-radius: 999px;
-  color: var(--login-lede);
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
 }
 
-.themeSlot button:hover {
-  color: var(--login-headline);
-}
-
-.eyebrow {
-  margin: 0;
+.field label {
   font-family: var(--font-mono-stack);
   font-size: var(--text-xs);
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--login-eyebrow);
+  color: var(--text-faint);
 }
 
-.headline {
-  margin: var(--space-sm) 0 0;
-  font-family: var(--font-sans-stack);
-  font-weight: 700;
-  font-size: clamp(2rem, 5vw, 3.25rem);
-  line-height: 1.08;
-  letter-spacing: -0.02em;
-  color: var(--login-headline);
-}
-
-.lede {
-  margin: var(--space-md) 0 0;
-  max-width: 56ch;
-  font-size: var(--text-md);
-  line-height: 1.6;
-  color: var(--login-lede);
-}
-
-.columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: clamp(1.25rem, 3vw, 2rem);
-  margin-top: clamp(1.75rem, 4vw, 2.75rem);
-}
-
-@media (max-width: 820px) {
-  .columns {
-    grid-template-columns: 1fr;
-  }
-}
-
-.infoCard {
-  padding: clamp(1.5rem, 3vw, 2rem);
-  background: linear-gradient(180deg, var(--login-accent), var(--login-accent-2));
-  border-radius: 16px;
-  color: #fff;
-}
-
-.infoTitle {
-  margin: 0;
-  font-family: var(--font-sans-stack);
-  font-weight: 700;
-  font-size: var(--text-lg);
-  color: #fff;
-}
-
-.infoList {
-  margin: var(--space-md) 0 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.infoList li {
-  position: relative;
-  padding-left: 1.35rem;
-  font-size: var(--text-sm);
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.92);
-}
-
-.infoList li::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0.55em;
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.loginCard {
-  padding: clamp(1.5rem, 3vw, 2rem);
-  background: var(--login-card);
-  border: 1px solid var(--login-card-border);
-  border-radius: 16px;
-}
-
-.loginTitle {
-  margin: 0;
-  font-family: var(--font-sans-stack);
-  font-weight: 700;
-  font-size: var(--text-lg);
-  color: var(--login-headline);
-}
-
-.form {
-  margin-top: var(--space-md);
-  display: flex;
-  flex-direction: column;
-}
-
-.label {
-  font-family: var(--font-sans-stack);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--login-label);
-}
-
-.input {
-  margin-top: var(--space-2xs);
-  padding: 0.75rem 0.85rem;
+.field input {
+  width: 100%;
+  padding: 0.65rem 0.9rem;
   font-family: var(--font-sans-stack);
   font-size: var(--text-base);
-  color: var(--login-headline);
-  background: var(--login-input-bg);
-  border: 1px solid var(--login-input-border);
-  border-radius: 10px;
+  color: var(--text);
+  background: var(--bg);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
 }
 
-.input:focus-visible {
-  outline: 2px solid var(--login-accent);
+.field input:focus-visible {
+  outline: 2px solid var(--accent-warm);
   outline-offset: 1px;
-  border-color: var(--login-accent);
+  border-color: var(--accent-warm);
+}
+
+.field input[aria-invalid="true"] {
+  border-color: var(--danger);
 }
 
 .error {
@@ -213,21 +73,23 @@
 }
 
 .submit {
-  margin-top: var(--space-md);
   width: 100%;
-  padding: 0.8rem 1rem;
+  margin-top: var(--space-md);
+  padding: 0.8rem 1.5rem;
   font-family: var(--font-sans-stack);
-  font-size: var(--text-base);
+  font-size: var(--text-md);
   font-weight: 700;
-  color: #fff;
-  background: linear-gradient(180deg, var(--login-accent), var(--login-accent-2));
-  border: none;
-  border-radius: 10px;
+  color: var(--accent-warm-contrast);
+  background: var(--accent-warm);
+  border: var(--border-width) solid var(--accent-warm);
+  border-radius: var(--radius);
   cursor: pointer;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out;
 }
 
 .submit:hover {
-  filter: brightness(1.06);
+  background: var(--accent-warm-hover);
+  border-color: var(--accent-warm-hover);
 }
 
 .submit:disabled {
