@@ -40,6 +40,44 @@
   );
 }
 
+/* Stored PDF attachment — a link tile over the same hatch as the placeholder. */
+.pdf {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3xs);
+  font-family: var(--font-mono-stack);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text-dim);
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 9px,
+    color-mix(in srgb, var(--text) 4%, transparent) 9px,
+    color-mix(in srgb, var(--text) 4%, transparent) 18px
+  );
+  transition: color 120ms ease;
+}
+
+.pdf:hover,
+.pdf:focus-visible {
+  color: var(--accent);
+}
+
+.pdfLabel {
+  font-size: var(--text-sm);
+}
+
+.pdfHint {
+  font-size: var(--text-xs);
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+
 .body {
   min-width: 0;
 }

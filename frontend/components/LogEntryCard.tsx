@@ -8,9 +8,18 @@ import styles from "./LogEntryCard.module.css";
  * anything else (empty, an example URL, a dead link) falls back to the hatch
  * placeholder rather than rendering a broken image.
  */
-function isDisplayableImage(url: string): boolean {
+function isStoredFile(url: string): boolean {
   try {
     return /\.blob\.vercel-storage\.com$/.test(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
+/** A stored attachment can be a PDF (plots/reports) rather than an image. */
+function isPdf(url: string): boolean {
+  try {
+    return new URL(url).pathname.toLowerCase().endsWith(".pdf");
   } catch {
     return false;
   }
@@ -25,7 +34,19 @@ export function LogEntryCard({ entry }: { entry: LogEntry }) {
     <Reveal>
       <article className={styles.card}>
         <div className={styles.media}>
-          {isDisplayableImage(entry.imageUrl) ? (
+          {!isStoredFile(entry.imageUrl) ? (
+            <span className={styles.placeholder}>Image</span>
+          ) : isPdf(entry.imageUrl) ? (
+            <a
+              href={entry.imageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.pdf}
+            >
+              <span className={styles.pdfLabel}>PDF</span>
+              <span className={styles.pdfHint}>Open ↗</span>
+            </a>
+          ) : (
             <Image
               src={entry.imageUrl}
               alt=""
@@ -33,8 +54,6 @@ export function LogEntryCard({ entry }: { entry: LogEntry }) {
               sizes="(max-width: 700px) 100vw, 15rem"
               className={styles.image}
             />
-          ) : (
-            <span className={styles.placeholder}>Image</span>
           )}
         </div>
         <div className={styles.body}>

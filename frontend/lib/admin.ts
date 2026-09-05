@@ -101,7 +101,13 @@ export interface NewEntryInput {
   tags: string[];
 }
 
-export async function uploadImage(file: File): Promise<string> {
+/**
+ * `POST /api/log/upload` — a Log attachment: a JPEG/PNG/WebP image or a PDF
+ * (plots and reports are often exported as PDF), up to 10 MB. Returns the
+ * stored URL to pass into `createEntry` as `imageUrl` — the field keeps that
+ * name whether the URL points at an image or a PDF.
+ */
+export async function uploadLogFile(file: File): Promise<string> {
   const form = new FormData();
   form.append("image", file);
   try {
@@ -155,8 +161,9 @@ export async function updateContent<T>(area: ContentArea, fields: Partial<T>): P
 
 /**
  * `POST /api/content/upload` — same two-stage upload-then-save pattern as
- * `uploadImage` above: upload first, then pass the returned URL into
- * `updateContent`. No image bytes ever go in a JSON body.
+ * `uploadLogFile` above: upload first, then pass the returned URL into
+ * `updateContent`. No image bytes ever go in a JSON body. Content-area photos
+ * are images only (no PDF) — a separate endpoint with a stricter validator.
  */
 export async function uploadContentImage(file: File): Promise<string> {
   const form = new FormData();

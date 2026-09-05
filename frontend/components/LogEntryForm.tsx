@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useId, useState, type ChangeEvent, type FormEvent } from "react";
 import { BackendError } from "@/lib/backend";
-import { createEntry, NotAuthenticatedError, uploadImage } from "@/lib/admin";
+import { createEntry, NotAuthenticatedError, uploadLogFile } from "@/lib/admin";
 import { fetchLogEntries } from "@/lib/log";
 import { formatLogDate } from "@/lib/format";
 import type { LogEntry } from "@/lib/types";
 import styles from "./LogEntryForm.module.css";
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const ACCEPT = "image/jpeg,image/png,image/webp";
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
+const PDF_TYPE = "application/pdf";
 const TAG_RE = /^[a-z0-9][a-z0-9-]{0,29}$/;
 
 type Status = "idle" | "working" | "done" | "error";
@@ -68,16 +69,18 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
     const next = e.target.files?.[0] ?? null;
     setPreviewUrl((old) => {
       if (old) URL.revokeObjectURL(old);
-      return next ? URL.createObjectURL(next) : null;
+      // Only images get an inline <img> preview; a PDF just shows its name.
+      return next && next.type !== PDF_TYPE ? URL.createObjectURL(next) : null;
     });
     setFile(next);
   }
 
   function validate(): Errors {
     const next: Errors = {};
-    if (!file) next.file = "Choose an image.";
-    else if (!ACCEPT.split(",").includes(file.type)) next.file = "Use a JPEG, PNG, or WebP.";
-    else if (file.size > MAX_IMAGE_BYTES) next.file = "Image must be 5 MB or smaller.";
+    if (!file) next.file = "Choose an image or PDF.";
+    else if (!ACCEPT.split(",").includes(file.type))
+      next.file = "Use a JPEG, PNG, WebP, or PDF.";
+    else if (file.size > MAX_UPLOAD_BYTES) next.file = "File must be 10 MB or smaller.";
 
     if (!title.trim()) next.title = "Required.";
     else if (title.trim().length > 120) next.title = "Keep it under 120 characters.";
@@ -106,18 +109,18 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
     if (Object.keys(found).length > 0 || !file) return;
 
     setStatus("working");
-    setMessage("Uploading image…");
+    setMessage("Uploading file…");
 
     let imageUrl: string;
     try {
-      imageUrl = await uploadImage(file);
+      imageUrl = await uploadLogFile(file);
     } catch (err) {
       if (err instanceof NotAuthenticatedError) return onSessionExpired();
       setStatus("error");
       setMessage(
         err instanceof BackendError
-          ? `Image upload failed: ${err.message}`
-          : "Image upload failed. Check the file and try again.",
+          ? `Upload failed: ${err.message}`
+          : "Upload failed. Check the file and try again.",
       );
       return;
     }
@@ -135,7 +138,7 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
       if (err instanceof NotAuthenticatedError) return onSessionExpired();
       setStatus("error");
       setMessage(
-        `The image uploaded but saving the entry failed${
+        `The file uploaded but saving the entry failed${
           err instanceof BackendError ? ` (${err.message})` : ""
         }. Nothing was half-saved — adjust and submit again.`,
       );
@@ -166,7 +169,7 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
           <legend className={styles.legend}>New entry</legend>
 
           <div className={styles.field}>
-            <label htmlFor={`${uid}-image`}>Image</label>
+            <label htmlFor={`${uid}-image`}>Image or PDF</label>
             <input
               id={`${uid}-image`}
               type="file"
@@ -175,14 +178,16 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
               aria-describedby={errors.file ? `${uid}-image-err` : `${uid}-image-hint`}
             />
             <p id={`${uid}-image-hint`} className={styles.hint}>
-              JPEG, PNG, or WebP — up to 5 MB.
+              JPEG, PNG, WebP, or PDF — up to 10 MB.
             </p>
             {errors.file ? (
               <p id={`${uid}-image-err`} className={styles.error}>
                 {errors.file}
               </p>
             ) : null}
-            {previewUrl ? (
+            {file && file.type === PDF_TYPE ? (
+              <p className={styles.fileName}>{file.name}</p>
+            ) : previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- transient local object-URL preview
               <img src={previewUrl} alt="Selected image preview" className={styles.preview} />
             ) : null}

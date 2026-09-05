@@ -101,6 +101,18 @@
   border: var(--border-width) solid var(--border);
 }
 
+.fileName {
+  margin-top: var(--space-2xs);
+  padding: var(--space-2xs) var(--space-xs);
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-sm);
+  color: var(--text-dim);
+  background: var(--bg-inset);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  overflow-wrap: anywhere;
+}
+
 .status {
   margin-top: var(--space-md);
   font-size: var(--text-sm);

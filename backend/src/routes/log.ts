@@ -4,7 +4,7 @@ import { requireAdmin } from "../middleware/requireAdmin";
 import { newLogEntrySchema } from "../lib/validation";
 import { listEntries, createEntry } from "../lib/logRepo";
 import { readCachedList, writeCachedList, invalidateList } from "../lib/logCache";
-import { MAX_IMAGE_BYTES, validateImage } from "../lib/uploadValidation";
+import { MAX_LOG_UPLOAD_BYTES, validateLogUpload } from "../lib/uploadValidation";
 import { uploadImage } from "../lib/storage";
 import { badRequest } from "../lib/errors";
 
@@ -12,7 +12,7 @@ export const logRouter = Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: MAX_IMAGE_BYTES, files: 1 },
+  limits: { fileSize: MAX_LOG_UPLOAD_BYTES, files: 1 },
 });
 
 /**
@@ -63,14 +63,16 @@ logRouter.post("/", requireAdmin, async (req, res, next) => {
 
 /**
  * POST /api/log/upload  (admin, multipart, field "image")
- * Validates MIME + magic bytes + size before storage; returns { imageUrl }.
+ * Accepts a JPEG/PNG/WebP image or a PDF. Validates MIME + magic bytes + size
+ * before storage; returns { imageUrl } (the field name is kept for the entry
+ * body — the URL may point at an image or a PDF).
  */
 logRouter.post("/upload", requireAdmin, upload.single("image"), async (req, res, next) => {
   try {
     const file = req.file;
-    if (!file) throw badRequest('No image provided (field "image")');
+    if (!file) throw badRequest('No file provided (field "image")');
 
-    const result = validateImage({
+    const result = validateLogUpload({
       buffer: file.buffer,
       size: file.size,
       mimetype: file.mimetype,
