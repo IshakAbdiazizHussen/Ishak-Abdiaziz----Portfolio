@@ -62,11 +62,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   }
 
   if (auth === "anon") {
-    return (
-      <div className={styles.center}>
-        <AdminLogin onAuthed={() => setAuth("authed")} />
-      </div>
-    );
+    return <AdminLogin onAuthed={() => setAuth("authed")} />;
   }
 
   return (
