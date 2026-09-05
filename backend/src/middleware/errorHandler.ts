@@ -30,7 +30,7 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
     const status = err.code === "LIMIT_FILE_SIZE" ? 413 : 400;
     logger.warn({ code: err.code, path: req.path }, "upload rejected");
     res.status(status).json({
-      error: err.code === "LIMIT_FILE_SIZE" ? "Image exceeds the size limit" : "Invalid upload",
+      error: err.code === "LIMIT_FILE_SIZE" ? "File exceeds the size limit" : "Invalid upload",
     });
     return;
   }

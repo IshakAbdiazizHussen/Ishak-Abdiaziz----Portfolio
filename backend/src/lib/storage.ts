@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { put } from "@vercel/blob";
 import { config } from "../config";
+import { AppError } from "./errors";
 import type { UploadExt } from "./uploadValidation";
 
 /**
@@ -19,11 +20,23 @@ export async function uploadImage(
   prefix: string = "log",
 ): Promise<{ url: string }> {
   const key = `${prefix}/${randomUUID()}.${ext}`;
-  const blob = await put(key, buffer, {
-    access: "public",
-    contentType,
-    token: config.BLOB_READ_WRITE_TOKEN,
-    addRandomSuffix: false,
-  });
-  return { url: blob.url };
+  try {
+    const blob = await put(key, buffer, {
+      access: "public",
+      contentType,
+      token: config.BLOB_READ_WRITE_TOKEN,
+      addRandomSuffix: false,
+    });
+    return { url: blob.url };
+  } catch (err) {
+    // A bad/placeholder BLOB_READ_WRITE_TOKEN or an unreachable store surfaces
+    // here (e.g. "Vercel Blob: This store does not exist."). Report it as a
+    // clear 503 to the admin rather than an opaque "Internal server error".
+    const detail = err instanceof Error ? err.message : "unknown error";
+    throw new AppError(
+      503,
+      `File storage is unavailable (${detail}). Check that BLOB_READ_WRITE_TOKEN points to a real Vercel Blob store.`,
+      true,
+    );
+  }
 }
