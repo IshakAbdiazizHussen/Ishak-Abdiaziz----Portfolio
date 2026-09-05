@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Nav } from "@/components/Nav";
-import { Footer } from "@/components/Footer";
 import { env } from "@/lib/env";
 import "./globals.css";
 
@@ -31,19 +29,18 @@ export const metadata: Metadata = {
 // Runs before first paint so the stored theme is applied with no flash.
 const THEME_INIT = `(function(){try{var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.dataset.theme=t;}catch(e){}})();`;
 
+/**
+ * Root layout: html/body, fonts and the pre-paint theme script only — the
+ * providers every route needs. The public header/footer chrome lives in
+ * `app/(site)/layout.tsx` so it is never rendered on `/admin`, which brings
+ * its own shell in `app/admin/layout.tsx`.
+ */
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
       <body>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
-        <a href="#main" className="skip-link">
-          Skip to content
-        </a>
-        <Nav />
-        <main id="main" className="site-main">
-          {children}
-        </main>
-        <Footer />
+        {children}
       </body>
     </html>
   );
