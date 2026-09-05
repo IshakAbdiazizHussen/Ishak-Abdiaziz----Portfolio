@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ThemeToggle } from "./ThemeToggle";
 import styles from "./AdminSidebar.module.css";
 
 /** Fixed order — matches the public nav order (constraint C8). */
@@ -36,9 +37,12 @@ export function AdminSidebar({ onLogout }: { onLogout: () => void }) {
           );
         })}
       </ul>
-      <button type="button" className={styles.logout} onClick={onLogout}>
-        Log out
-      </button>
+      <div className={styles.actions}>
+        <ThemeToggle />
+        <button type="button" className={styles.logout} onClick={onLogout}>
+          Log out
+        </button>
+      </div>
     </nav>
   );
 }
