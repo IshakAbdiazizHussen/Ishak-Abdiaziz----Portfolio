@@ -49,19 +49,15 @@
   );
 }
 
-/* Stored PDF attachment — a link tile over the same hatch as the placeholder. */
+/*
+ * Stored PDF attachment: the first-page preview image fills the slot, with a
+ * small "PDF" badge on top. The hatch behind it shows through only if the
+ * preview image is missing (see PdfPreview's onError fallback).
+ */
 .pdf {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-3xs);
-  font-family: var(--font-mono-stack);
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--text-dim);
+  display: block;
   background-image: repeating-linear-gradient(
     45deg,
     transparent,
@@ -69,22 +65,28 @@
     color-mix(in srgb, var(--text) 4%, transparent) 9px,
     color-mix(in srgb, var(--text) 4%, transparent) 18px
   );
-  transition: color 120ms ease;
 }
 
-.pdf:hover,
-.pdf:focus-visible {
-  color: var(--accent);
-}
-
-.pdfLabel {
-  font-size: var(--text-sm);
-}
-
-.pdfHint {
+.pdfBadge {
+  position: absolute;
+  left: var(--space-2xs);
+  bottom: var(--space-2xs);
+  padding: 2px var(--space-2xs);
+  font-family: var(--font-mono-stack);
   font-size: var(--text-xs);
-  letter-spacing: 0.1em;
-  color: var(--text-faint);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  border: var(--border-width) solid var(--border);
+  backdrop-filter: blur(2px);
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.pdf:hover .pdfBadge,
+.pdf:focus-visible .pdfBadge {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .body {

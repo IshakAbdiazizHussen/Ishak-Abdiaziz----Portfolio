@@ -13,26 +13,21 @@ import type { UploadExt } from "./uploadValidation";
 export const LOCAL_UPLOAD_DIR = path.resolve(process.cwd(), "uploads");
 
 /**
- * Uploads a file and returns its public URL. The object key is server-generated
- * (`<prefix>/<uuid>.<ext>`) — the client filename is never trusted. This is the
- * ONLY module that writes upload bytes anywhere; they never touch Postgres.
- * `prefix` namespaces uploads by feature (Log uploads default to `log/`;
- * content-area images pass `content`). `ext` is `jpg`/`png`/`webp` for content
- * images, plus `pdf` for Log attachments.
+ * Write one object and return its public URL.
  *
  * Driver:
  *  - "blob"  → Vercel Blob (production; needs BLOB_READ_WRITE_TOKEN)
  *  - "local" → backend/uploads/<key>, URL `${publicBaseUrl}/uploads/<key>`
  *              (development fallback when no Blob token is configured)
+ *
+ * This is the ONLY module that writes upload bytes anywhere; they never touch
+ * Postgres.
  */
-export async function uploadImage(
+async function writeObject(
+  key: string,
   buffer: Buffer,
-  ext: UploadExt,
   contentType: string,
-  prefix: string = "log",
 ): Promise<{ url: string }> {
-  const key = `${prefix}/${randomUUID()}.${ext}`;
-
   if (storageDriver === "local") {
     const dest = path.join(LOCAL_UPLOAD_DIR, key);
     try {
@@ -69,4 +64,36 @@ export async function uploadImage(
       true,
     );
   }
+}
+
+/**
+ * Uploads a file and returns its public URL. The object key is server-generated
+ * (`<prefix>/<uuid>.<ext>`) — the client filename is never trusted. `prefix`
+ * namespaces uploads by feature (Log uploads default to `log/`; content-area
+ * images pass `content`). `ext` is `jpg`/`png`/`webp` for content images.
+ */
+export async function uploadImage(
+  buffer: Buffer,
+  ext: UploadExt,
+  contentType: string,
+  prefix: string = "log",
+): Promise<{ url: string }> {
+  return writeObject(`${prefix}/${randomUUID()}.${ext}`, buffer, contentType);
+}
+
+/**
+ * Uploads a Log PDF together with its first-page PNG preview. Both share one id
+ * so the preview URL is the PDF URL with `.pdf` → `.png` (the public Log derives
+ * it that way — no extra field on the entry).
+ */
+export async function uploadLogPdf(
+  pdfBytes: Buffer,
+  previewPng: Buffer,
+): Promise<{ url: string; previewUrl: string }> {
+  const id = randomUUID();
+  const [main, preview] = await Promise.all([
+    writeObject(`log/${id}.pdf`, pdfBytes, "application/pdf"),
+    writeObject(`log/${id}.png`, previewPng, "image/png"),
+  ]);
+  return { url: main.url, previewUrl: preview.url };
 }

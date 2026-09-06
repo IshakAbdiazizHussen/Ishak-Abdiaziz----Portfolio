@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { LogEntry } from "@/lib/types";
+import { PdfPreview } from "./PdfPreview";
 import { Reveal } from "./Reveal";
 import styles from "./LogEntryCard.module.css";
 
@@ -33,6 +34,11 @@ function isPdf(url: string): boolean {
   }
 }
 
+/** The backend stores a PDF's first-page PNG preview beside it: `<id>.pdf` → `<id>.png`. */
+function pdfPreviewUrl(pdfUrl: string): string {
+  return pdfUrl.replace(/\.pdf(\?.*)?$/i, ".png");
+}
+
 /**
  * Presentational. `entry.description` is rendered as plain text by React's
  * default escaping — never as HTML (constraint C9).
@@ -45,15 +51,11 @@ export function LogEntryCard({ entry }: { entry: LogEntry }) {
           {!isStoredFile(entry.imageUrl) ? (
             <span className={styles.placeholder}>Image</span>
           ) : isPdf(entry.imageUrl) ? (
-            <a
-              href={entry.imageUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.pdf}
-            >
-              <span className={styles.pdfLabel}>PDF</span>
-              <span className={styles.pdfHint}>Open ↗</span>
-            </a>
+            <PdfPreview
+              pdfUrl={entry.imageUrl}
+              previewUrl={pdfPreviewUrl(entry.imageUrl)}
+              blobHosted={isBlobHosted(entry.imageUrl)}
+            />
           ) : isBlobHosted(entry.imageUrl) ? (
             <Image
               src={entry.imageUrl}

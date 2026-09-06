@@ -27,6 +27,7 @@
     "helmet": "^8.0.0",
     "ioredis": "^5.4.2",
     "multer": "^2.0.1",
+    "pdf-to-img": "^7.0.0",
     "pino": "^9.5.0",
     "pino-http": "^10.3.0",
     "postgres": "^3.4.5",

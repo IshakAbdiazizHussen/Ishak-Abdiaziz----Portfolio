@@ -5,7 +5,8 @@ import { newLogEntrySchema } from "../lib/validation";
 import { listEntries, createEntry } from "../lib/logRepo";
 import { readCachedList, writeCachedList, invalidateList } from "../lib/logCache";
 import { MAX_LOG_UPLOAD_BYTES, validateLogUpload } from "../lib/uploadValidation";
-import { uploadImage } from "../lib/storage";
+import { uploadImage, uploadLogPdf } from "../lib/storage";
+import { renderPdfFirstPage } from "../lib/pdfThumbnail";
 import { badRequest } from "../lib/errors";
 
 export const logRouter = Router();
@@ -66,6 +67,10 @@ logRouter.post("/", requireAdmin, async (req, res, next) => {
  * Accepts a JPEG/PNG/WebP image or a PDF. Validates MIME + magic bytes + size
  * before storage; returns { imageUrl } (the field name is kept for the entry
  * body — the URL may point at an image or a PDF).
+ *
+ * For a PDF, the first page is rendered to a PNG and stored alongside it
+ * (`<id>.pdf` + `<id>.png`), so the public Log can show the page image; the
+ * preview URL is just the PDF URL with `.pdf` → `.png`.
  */
 logRouter.post("/upload", requireAdmin, upload.single("image"), async (req, res, next) => {
   try {
@@ -78,6 +83,13 @@ logRouter.post("/upload", requireAdmin, upload.single("image"), async (req, res,
       mimetype: file.mimetype,
     });
     if (!result.ok) throw badRequest(result.error);
+
+    if (result.contentType === "application/pdf") {
+      const preview = await renderPdfFirstPage(file.buffer);
+      const { url } = await uploadLogPdf(file.buffer, preview);
+      res.status(200).json({ imageUrl: url });
+      return;
+    }
 
     const { url } = await uploadImage(file.buffer, result.ext, result.contentType);
     res.status(200).json({ imageUrl: url });
