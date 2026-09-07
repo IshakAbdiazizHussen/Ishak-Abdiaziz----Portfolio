@@ -12,6 +12,27 @@ const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
 const PDF_TYPE = "application/pdf";
 const TAG_RE = /^[a-z0-9][a-z0-9-]{0,29}$/;
+const BACKEND_ORIGIN = (process.env.NEXT_PUBLIC_BACKEND_URL ?? "").replace(/\/+$/, "");
+
+/**
+ * A small preview URL for an entry's attachment, or `null` if there is none we
+ * can show. PDFs resolve to the first-page PNG the backend renders at upload
+ * (`<id>.pdf` → `<id>.png`).
+ */
+function thumbFor(imageUrl: string): string | null {
+  if (!imageUrl) return null;
+  let host: string;
+  try {
+    host = new URL(imageUrl).hostname;
+  } catch {
+    return null;
+  }
+  const stored =
+    /\.blob\.vercel-storage\.com$/.test(host) ||
+    (BACKEND_ORIGIN !== "" && imageUrl.startsWith(`${BACKEND_ORIGIN}/uploads/`));
+  if (!stored) return null;
+  return /\.pdf(\?.*)?$/i.test(imageUrl) ? imageUrl.replace(/\.pdf(\?.*)?$/i, ".png") : imageUrl;
+}
 
 type Status = "idle" | "working" | "done" | "error";
 
@@ -47,17 +68,24 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
-  const [recent, setRecent] = useState<LogEntry[]>([]);
+  const [entries, setEntries] = useState<LogEntry[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
-  const loadRecent = useCallback(() => {
+  const loadEntries = useCallback(() => {
     fetchLogEntries()
-      .then((entries) => setRecent(entries.slice(0, 5)))
-      .catch(() => setRecent([]));
+      .then((list) => {
+        setEntries(list);
+        setLoadFailed(false);
+      })
+      .catch(() => {
+        setEntries([]);
+        setLoadFailed(true);
+      });
   }, []);
 
   useEffect(() => {
-    loadRecent();
-  }, [loadRecent]);
+    loadEntries();
+  }, [loadEntries]);
 
   useEffect(() => {
     return () => {
@@ -157,7 +185,7 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
     setTagsRaw("");
     setDate(todayISO());
     setErrors({});
-    loadRecent();
+    loadEntries();
   }
 
   const busy = status === "working";
@@ -288,17 +316,62 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
       </form>
 
       <aside className={styles.recent}>
-        <h2 className={styles.recentTitle}>Recent entries</h2>
-        {recent.length === 0 ? (
-          <p className={styles.hint}>None yet.</p>
+        <div className={styles.recentHead}>
+          <h2 className={styles.recentTitle}>
+            Published entries{entries ? ` (${entries.length})` : ""}
+          </h2>
+          <a
+            href="/log"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.recentLink}
+          >
+            View public Log ↗
+          </a>
+        </div>
+
+        {entries === null ? (
+          <p className={styles.hint}>Loading…</p>
+        ) : loadFailed ? (
+          <p className={styles.error}>
+            Couldn&apos;t load the entries.{" "}
+            <button type="button" className={styles.retry} onClick={loadEntries}>
+              Retry
+            </button>
+          </p>
+        ) : entries.length === 0 ? (
+          <p className={styles.hint}>Nothing logged yet.</p>
         ) : (
           <ul className={styles.recentList}>
-            {recent.map((entry) => (
-              <li key={entry.id}>
-                <span className={styles.recentDate}>{formatLogDate(entry.date)}</span>
-                <span>{entry.title}</span>
-              </li>
-            ))}
+            {entries.map((entry) => {
+              const thumb = thumbFor(entry.imageUrl);
+              return (
+                <li key={entry.id} className={styles.entryRow}>
+                  {thumb ? (
+                    <a
+                      href={entry.imageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.thumb}
+                      aria-label="Open attachment"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element -- admin-only list, mixed local/blob hosts */}
+                      <img src={thumb} alt="" />
+                    </a>
+                  ) : (
+                    <span className={styles.thumbEmpty} aria-hidden="true" />
+                  )}
+                  <div className={styles.entryMeta}>
+                    <span className={styles.recentDate}>{formatLogDate(entry.date)}</span>
+                    <span className={styles.entryTitle}>{entry.title}</span>
+                    <span className={styles.entryDesc}>{entry.description}</span>
+                    {entry.tags.length > 0 ? (
+                      <span className={styles.entryTags}>{entry.tags.join(" · ")}</span>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </aside>
