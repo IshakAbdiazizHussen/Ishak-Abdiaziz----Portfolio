@@ -47,7 +47,9 @@ export const newLogEntrySchema = z.object({
       // allow up to ~36h ahead to be timezone-forgiving; reject anything further
       return t <= Date.now() + 36 * 60 * 60 * 1000;
     }, "date is invalid or too far in the future"),
-  imageUrl: httpsAllowlistedUrl,
+  // Empty = no attachment (the 5 seeded entries have none; an edit may also
+  // clear one). Otherwise a URL from POST /api/log/upload.
+  imageUrl: z.union([z.literal(""), httpsAllowlistedUrl]).default(""),
   tags: z.array(tag).max(8, "at most 8 tags").default([]),
 });
 

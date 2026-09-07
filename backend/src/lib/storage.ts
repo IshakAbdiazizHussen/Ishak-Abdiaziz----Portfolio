@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { put } from "@vercel/blob";
+import { del, put } from "@vercel/blob";
 import { config, publicBaseUrl, storageDriver } from "../config";
 import { AppError } from "./errors";
+import { logger } from "./logger";
 import type { UploadExt } from "./uploadValidation";
 
 /**
@@ -96,4 +97,40 @@ export async function uploadLogPdf(
     writeObject(`log/${id}.png`, previewPng, "image/png"),
   ]);
   return { url: main.url, previewUrl: preview.url };
+}
+
+/**
+ * Best-effort removal of a Log entry's stored attachment. For a PDF it also
+ * removes the sibling `.png` preview. Never throws — a failed cleanup is
+ * logged, not surfaced (the entry is already gone from the database).
+ */
+export async function deleteLogObjects(imageUrl: string): Promise<void> {
+  if (!imageUrl) return;
+
+  const urls = [imageUrl];
+  if (/\.pdf(\?.*)?$/i.test(imageUrl)) {
+    urls.push(imageUrl.replace(/\.pdf(\?.*)?$/i, ".png"));
+  }
+
+  for (const url of urls) {
+    try {
+      if (storageDriver === "local") {
+        const key = localKeyFromUrl(url);
+        if (key) await rm(path.join(LOCAL_UPLOAD_DIR, key), { force: true });
+      } else {
+        await del(url, { token: config.BLOB_READ_WRITE_TOKEN });
+      }
+    } catch (err) {
+      logger.warn({ err, url }, "log attachment cleanup failed (ignored)");
+    }
+  }
+}
+
+/** `${publicBaseUrl}/uploads/log/<id>.pdf` → `log/<id>.pdf`, or null if it isn't ours. */
+function localKeyFromUrl(url: string): string | null {
+  const prefix = `${publicBaseUrl}/uploads/`;
+  if (!url.startsWith(prefix)) return null;
+  const key = url.slice(prefix.length);
+  if (!key || key.startsWith("/") || key.split("/").includes("..")) return null;
+  return key;
 }

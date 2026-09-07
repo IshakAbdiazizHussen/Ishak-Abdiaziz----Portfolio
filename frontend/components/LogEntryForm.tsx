@@ -1,38 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState, type ChangeEvent, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import { BackendError } from "@/lib/backend";
-import { createEntry, NotAuthenticatedError, uploadLogFile } from "@/lib/admin";
+import { createEntry, NotAuthenticatedError, updateEntry, uploadLogFile } from "@/lib/admin";
 import { fetchLogEntries } from "@/lib/log";
-import { formatLogDate } from "@/lib/format";
 import type { LogEntry } from "@/lib/types";
+import { LogAdminList } from "./LogAdminList";
+import { thumbFor } from "./log-attachment";
 import styles from "./LogEntryForm.module.css";
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
 const PDF_TYPE = "application/pdf";
 const TAG_RE = /^[a-z0-9][a-z0-9-]{0,29}$/;
-const BACKEND_ORIGIN = (process.env.NEXT_PUBLIC_BACKEND_URL ?? "").replace(/\/+$/, "");
-
-/**
- * A small preview URL for an entry's attachment, or `null` if there is none we
- * can show. PDFs resolve to the first-page PNG the backend renders at upload
- * (`<id>.pdf` → `<id>.png`).
- */
-function thumbFor(imageUrl: string): string | null {
-  if (!imageUrl) return null;
-  let host: string;
-  try {
-    host = new URL(imageUrl).hostname;
-  } catch {
-    return null;
-  }
-  const stored =
-    /\.blob\.vercel-storage\.com$/.test(host) ||
-    (BACKEND_ORIGIN !== "" && imageUrl.startsWith(`${BACKEND_ORIGIN}/uploads/`));
-  if (!stored) return null;
-  return /\.pdf(\?.*)?$/i.test(imageUrl) ? imageUrl.replace(/\.pdf(\?.*)?$/i, ".png") : imageUrl;
-}
 
 type Status = "idle" | "working" | "done" | "error";
 
@@ -57,6 +45,7 @@ function parseTags(raw: string): string[] {
 
 export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => void }) {
   const uid = useId();
+  const formRef = useRef<HTMLFormElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -64,6 +53,12 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(todayISO());
   const [tagsRaw, setTagsRaw] = useState("");
+
+  // Edit mode: the entry being edited, its current attachment, and whether the
+  // user asked to clear that attachment.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [keptImageUrl, setKeptImageUrl] = useState("");
+  const [removeAttachment, setRemoveAttachment] = useState(false);
 
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<Status>("idle");
@@ -93,6 +88,41 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
     };
   }, [previewUrl]);
 
+  function clearFile() {
+    setPreviewUrl((old) => {
+      if (old) URL.revokeObjectURL(old);
+      return null;
+    });
+    setFile(null);
+  }
+
+  function resetForm() {
+    clearFile();
+    setTitle("");
+    setDescription("");
+    setDate(todayISO());
+    setTagsRaw("");
+    setEditingId(null);
+    setKeptImageUrl("");
+    setRemoveAttachment(false);
+    setErrors({});
+  }
+
+  const startEdit = useCallback((entry: LogEntry) => {
+    clearFile();
+    setEditingId(entry.id);
+    setTitle(entry.title);
+    setDescription(entry.description);
+    setDate(entry.date);
+    setTagsRaw(entry.tags.join(", "));
+    setKeptImageUrl(entry.imageUrl);
+    setRemoveAttachment(false);
+    setErrors({});
+    setStatus("idle");
+    setMessage("");
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
   function onFileChange(e: ChangeEvent<HTMLInputElement>) {
     const next = e.target.files?.[0] ?? null;
     setPreviewUrl((old) => {
@@ -101,14 +131,20 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
       return next && next.type !== PDF_TYPE ? URL.createObjectURL(next) : null;
     });
     setFile(next);
+    if (next) setRemoveAttachment(false);
   }
 
   function validate(): Errors {
     const next: Errors = {};
-    if (!file) next.file = "Choose an image or PDF.";
-    else if (!ACCEPT.split(",").includes(file.type))
-      next.file = "Use a JPEG, PNG, WebP, or PDF.";
-    else if (file.size > MAX_UPLOAD_BYTES) next.file = "File must be 10 MB or smaller.";
+
+    // An attachment is required only when creating. When editing, an unchanged
+    // entry keeps its current attachment (or has none).
+    if (file) {
+      if (!ACCEPT.split(",").includes(file.type)) next.file = "Use a JPEG, PNG, WebP, or PDF.";
+      else if (file.size > MAX_UPLOAD_BYTES) next.file = "File must be 10 MB or smaller.";
+    } else if (!editingId) {
+      next.file = "Choose an image or PDF.";
+    }
 
     if (!title.trim()) next.title = "Required.";
     else if (title.trim().length > 120) next.title = "Keep it under 120 characters.";
@@ -134,70 +170,79 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
 
     const found = validate();
     setErrors(found);
-    if (Object.keys(found).length > 0 || !file) return;
+    if (Object.keys(found).length > 0) return;
 
     setStatus("working");
-    setMessage("Uploading file…");
 
+    // Resolve the attachment URL.
     let imageUrl: string;
-    try {
-      imageUrl = await uploadLogFile(file);
-    } catch (err) {
-      if (err instanceof NotAuthenticatedError) return onSessionExpired();
-      setStatus("error");
-      setMessage(
-        err instanceof BackendError
-          ? `Upload failed: ${err.message}`
-          : "Upload failed. Check the file and try again.",
-      );
-      return;
+    if (file) {
+      setMessage("Uploading file…");
+      try {
+        imageUrl = await uploadLogFile(file);
+      } catch (err) {
+        if (err instanceof NotAuthenticatedError) return onSessionExpired();
+        setStatus("error");
+        setMessage(
+          err instanceof BackendError
+            ? `Upload failed: ${err.message}`
+            : "Upload failed. Check the file and try again.",
+        );
+        return;
+      }
+    } else if (editingId && removeAttachment) {
+      imageUrl = "";
+    } else {
+      imageUrl = keptImageUrl;
     }
 
-    setMessage("Saving entry…");
+    const payload = {
+      title: title.trim(),
+      description: description.trim(),
+      date,
+      imageUrl,
+      tags: parseTags(tagsRaw),
+    };
+
+    setMessage(editingId ? "Saving changes…" : "Saving entry…");
     try {
-      await createEntry({
-        title: title.trim(),
-        description: description.trim(),
-        date,
-        imageUrl,
-        tags: parseTags(tagsRaw),
-      });
+      if (editingId) {
+        await updateEntry(editingId, payload);
+      } else {
+        await createEntry(payload);
+      }
     } catch (err) {
       if (err instanceof NotAuthenticatedError) return onSessionExpired();
       setStatus("error");
       setMessage(
-        `The file uploaded but saving the entry failed${
-          err instanceof BackendError ? ` (${err.message})` : ""
-        }. Nothing was half-saved — adjust and submit again.`,
+        `${file ? "The file uploaded but s" : "S"}aving ${
+          editingId ? "the changes" : "the entry"
+        } failed${err instanceof BackendError ? ` (${err.message})` : ""}. ${
+          file ? "Nothing was half-saved — adjust and submit again." : "Try again."
+        }`,
       );
       return;
     }
 
     setStatus("done");
-    setMessage("Entry added to the log.");
-    setPreviewUrl((old) => {
-      if (old) URL.revokeObjectURL(old);
-      return null;
-    });
-    setFile(null);
-    setTitle("");
-    setDescription("");
-    setTagsRaw("");
-    setDate(todayISO());
-    setErrors({});
+    setMessage(editingId ? "Changes saved." : "Entry added to the log.");
+    resetForm();
     loadEntries();
   }
 
   const busy = status === "working";
+  const editing = editingId !== null;
+  const showKept = editing && !file && !removeAttachment && keptImageUrl !== "";
+  const keptThumb = showKept ? thumbFor(keptImageUrl) : null;
 
   return (
     <div className={styles.wrap}>
-      <form className={styles.form} onSubmit={onSubmit} noValidate>
+      <form ref={formRef} className={styles.form} onSubmit={onSubmit} noValidate>
         <fieldset className={styles.fieldset} disabled={busy}>
-          <legend className={styles.legend}>New entry</legend>
+          <legend className={styles.legend}>{editing ? "Edit entry" : "New entry"}</legend>
 
           <div className={styles.field}>
-            <label htmlFor={`${uid}-image`}>Image or PDF</label>
+            <label htmlFor={`${uid}-image`}>{editing ? "Replace image or PDF" : "Image or PDF"}</label>
             <input
               id={`${uid}-image`}
               type="file"
@@ -207,17 +252,45 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
             />
             <p id={`${uid}-image-hint`} className={styles.hint}>
               JPEG, PNG, WebP, or PDF — up to 10 MB.
+              {editing && keptImageUrl !== "" ? " Leave empty to keep the current one." : ""}
             </p>
             {errors.file ? (
               <p id={`${uid}-image-err`} className={styles.error}>
                 {errors.file}
               </p>
             ) : null}
+
             {file && file.type === PDF_TYPE ? (
               <p className={styles.fileName}>{file.name}</p>
             ) : previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- transient local object-URL preview
               <img src={previewUrl} alt="Selected image preview" className={styles.preview} />
+            ) : showKept ? (
+              <div className={styles.kept}>
+                {keptThumb ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- admin-only, mixed hosts
+                  <img src={keptThumb} alt="" className={styles.keptThumb} />
+                ) : null}
+                <span className={styles.hint}>Current attachment</span>
+                <button
+                  type="button"
+                  className={styles.linkBtn}
+                  onClick={() => setRemoveAttachment(true)}
+                >
+                  Remove
+                </button>
+              </div>
+            ) : editing && removeAttachment ? (
+              <div className={styles.kept}>
+                <span className={styles.hint}>Attachment will be removed on save.</span>
+                <button
+                  type="button"
+                  className={styles.linkBtn}
+                  onClick={() => setRemoveAttachment(false)}
+                >
+                  Undo
+                </button>
+              </div>
             ) : null}
           </div>
 
@@ -295,9 +368,16 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
             </div>
           </div>
 
-          <button type="submit" className="button">
-            {busy ? "Working…" : "Add entry"}
-          </button>
+          <div className={styles.actions}>
+            <button type="submit" className="button">
+              {busy ? "Working…" : editing ? "Save changes" : "Add entry"}
+            </button>
+            {editing ? (
+              <button type="button" className="button-ghost" onClick={resetForm} disabled={busy}>
+                Cancel
+              </button>
+            ) : null}
+          </div>
         </fieldset>
 
         <p
@@ -315,66 +395,14 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
         </p>
       </form>
 
-      <aside className={styles.recent}>
-        <div className={styles.recentHead}>
-          <h2 className={styles.recentTitle}>
-            Published entries{entries ? ` (${entries.length})` : ""}
-          </h2>
-          <a
-            href="/log"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.recentLink}
-          >
-            View public Log ↗
-          </a>
-        </div>
-
-        {entries === null ? (
-          <p className={styles.hint}>Loading…</p>
-        ) : loadFailed ? (
-          <p className={styles.error}>
-            Couldn&apos;t load the entries.{" "}
-            <button type="button" className={styles.retry} onClick={loadEntries}>
-              Retry
-            </button>
-          </p>
-        ) : entries.length === 0 ? (
-          <p className={styles.hint}>Nothing logged yet.</p>
-        ) : (
-          <ul className={styles.recentList}>
-            {entries.map((entry) => {
-              const thumb = thumbFor(entry.imageUrl);
-              return (
-                <li key={entry.id} className={styles.entryRow}>
-                  {thumb ? (
-                    <a
-                      href={entry.imageUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.thumb}
-                      aria-label="Open attachment"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element -- admin-only list, mixed local/blob hosts */}
-                      <img src={thumb} alt="" />
-                    </a>
-                  ) : (
-                    <span className={styles.thumbEmpty} aria-hidden="true" />
-                  )}
-                  <div className={styles.entryMeta}>
-                    <span className={styles.recentDate}>{formatLogDate(entry.date)}</span>
-                    <span className={styles.entryTitle}>{entry.title}</span>
-                    <span className={styles.entryDesc}>{entry.description}</span>
-                    {entry.tags.length > 0 ? (
-                      <span className={styles.entryTags}>{entry.tags.join(" · ")}</span>
-                    ) : null}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </aside>
+      <LogAdminList
+        entries={entries}
+        loadFailed={loadFailed}
+        editingId={editingId}
+        onEdit={startEdit}
+        onReload={loadEntries}
+        onSessionExpired={onSessionExpired}
+      />
     </div>
   );
 }

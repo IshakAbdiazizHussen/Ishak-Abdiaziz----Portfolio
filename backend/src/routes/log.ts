@@ -1,13 +1,17 @@
 import { Router } from "express";
 import multer from "multer";
 import { requireAdmin } from "../middleware/requireAdmin";
-import { newLogEntrySchema } from "../lib/validation";
-import { listEntries, createEntry } from "../lib/logRepo";
+import { newLogEntrySchema, uuidParam } from "../lib/validation";
+import { listEntries, createEntry, getEntry, updateEntry, deleteEntry } from "../lib/logRepo";
 import { readCachedList, writeCachedList, invalidateList } from "../lib/logCache";
 import { MAX_LOG_UPLOAD_BYTES, validateLogUpload } from "../lib/uploadValidation";
-import { uploadImage, uploadLogPdf } from "../lib/storage";
+import { uploadImage, uploadLogPdf, deleteLogObjects } from "../lib/storage";
 import { renderPdfFirstPage } from "../lib/pdfThumbnail";
-import { badRequest } from "../lib/errors";
+import { badRequest, notFound } from "../lib/errors";
+
+function isUuid(value: string | undefined): value is string {
+  return !!value && uuidParam.safeParse(value).success;
+}
 
 export const logRouter = Router();
 
@@ -57,6 +61,64 @@ logRouter.post("/", requireAdmin, async (req, res, next) => {
     });
     await invalidateList();
     res.status(201).json({ entry });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * PUT /api/log/:id  (admin)
+ * Full replacement of one entry's editable fields. `imageUrl` may be "" (no
+ * attachment), the entry's existing URL (keep it), or a fresh one from
+ * POST /api/log/upload. If it changed, the old file(s) are cleaned up.
+ */
+logRouter.put("/:id", requireAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!isUuid(id)) throw notFound("Unknown entry");
+
+    const parsed = newLogEntrySchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw badRequest(parsed.error.issues[0]?.message ?? "Invalid entry");
+    }
+
+    const before = await getEntry(id);
+    if (!before) throw notFound("Unknown entry");
+
+    const entry = await updateEntry(id, {
+      title: parsed.data.title,
+      description: parsed.data.description,
+      date: parsed.data.date,
+      imageUrl: parsed.data.imageUrl,
+      tags: parsed.data.tags,
+    });
+    if (!entry) throw notFound("Unknown entry");
+    await invalidateList();
+
+    if (before.imageUrl && before.imageUrl !== entry.imageUrl) {
+      void deleteLogObjects(before.imageUrl);
+    }
+    res.status(200).json({ entry });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * DELETE /api/log/:id  (admin)
+ * Removes the entry and best-effort deletes its stored attachment.
+ */
+logRouter.delete("/:id", requireAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!isUuid(id)) throw notFound("Unknown entry");
+
+    const imageUrl = await deleteEntry(id);
+    if (imageUrl === null) throw notFound("Unknown entry");
+    await invalidateList();
+
+    void deleteLogObjects(imageUrl);
+    res.status(204).end();
   } catch (err) {
     next(err);
   }

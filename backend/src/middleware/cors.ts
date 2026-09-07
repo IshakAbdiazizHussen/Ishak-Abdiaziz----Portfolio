@@ -31,8 +31,9 @@ export const corsMiddleware = cors({
     callback(null, isAllowedOrigin(origin));
   },
   credentials: true,
-  // PUT added for feature 13 (PUT /api/content/:area) — see docs/architecture.md §13.
-  methods: ["GET", "POST", "PUT", "OPTIONS"],
+  // PUT: content areas (feature 13) + editing a Log entry.
+  // DELETE: removing a Log entry.
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type"],
   maxAge: 600,
 });

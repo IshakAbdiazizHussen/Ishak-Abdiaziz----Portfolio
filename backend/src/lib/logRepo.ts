@@ -58,3 +58,39 @@ export async function createEntry(input: NewLogEntry): Promise<LogEntry> {
   if (!row) throw new Error("insert returned no row");
   return toEntry(row);
 }
+
+export async function getEntry(id: string): Promise<LogEntry | null> {
+  const rows = await sql<Row[]>`
+    select id, title, description,
+           to_char(date, 'YYYY-MM-DD') as date,
+           image_url, tags, created_at
+    from log_entries
+    where id = ${id}
+  `;
+  return rows[0] ? toEntry(rows[0]) : null;
+}
+
+/** Full replacement of one entry's editable fields. Returns null if the id is unknown. */
+export async function updateEntry(id: string, input: NewLogEntry): Promise<LogEntry | null> {
+  const rows = await sql<Row[]>`
+    update log_entries set
+      title = ${input.title},
+      description = ${input.description},
+      date = ${input.date}::date,
+      image_url = ${input.imageUrl},
+      tags = ${input.tags}
+    where id = ${id}
+    returning id, title, description,
+              to_char(date, 'YYYY-MM-DD') as date,
+              image_url, tags, created_at
+  `;
+  return rows[0] ? toEntry(rows[0]) : null;
+}
+
+/** Deletes one entry, returning its `image_url` (for attachment cleanup) or null if unknown. */
+export async function deleteEntry(id: string): Promise<string | null> {
+  const rows = await sql<{ image_url: string }[]>`
+    delete from log_entries where id = ${id} returning image_url
+  `;
+  return rows[0] ? rows[0].image_url : null;
+}

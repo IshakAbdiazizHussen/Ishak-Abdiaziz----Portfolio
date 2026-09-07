@@ -3,6 +3,7 @@ import type {
   IntroContent,
   HowIGotHereContent,
   LetsTalkContent,
+  LogEntry,
   Project,
   ProjectStat,
   ToolboxGroup,
@@ -131,6 +132,30 @@ export async function createEntry(input: NewEntryInput): Promise<void> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     });
+  } catch (err) {
+    mapAuthed(err);
+  }
+}
+
+/** `PUT /api/log/:id` — full replacement. `imageUrl: ""` means no attachment. */
+export async function updateEntry(id: string, input: NewEntryInput): Promise<LogEntry> {
+  try {
+    const res = await backendFetch<{ entry: LogEntry }>(`/api/log/${id}`, {
+      auth: true,
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    return res.entry;
+  } catch (err) {
+    mapAuthed(err);
+  }
+}
+
+/** `DELETE /api/log/:id` — also removes the stored attachment. 204, no body. */
+export async function deleteEntry(id: string): Promise<void> {
+  try {
+    await backendFetch(`/api/log/${id}`, { auth: true, method: "DELETE" });
   } catch (err) {
     mapAuthed(err);
   }
