@@ -1,26 +1,24 @@
-import Redis from "ioredis";
+import { Redis } from "@upstash/redis";
 import { config } from "../config";
-import { logger } from "./logger";
 
 /**
- * Single shared Redis client. This module only creates the client.
+ * Single shared Redis client — Upstash over its REST API.
  *
- * Commands fail fast-ish when Redis is unavailable (`maxRetriesPerRequest: 2`,
- * `commandTimeout`), which callers rely on:
+ * Stateless HTTP: there is no socket, no connection pool, and nothing to close.
+ * Every command is an independent HTTPS request, which is exactly what a
+ * serverless deploy needs. Command errors (network, auth, Upstash outage)
+ * propagate to the caller, which decides the policy:
  *   - session reads and the rate limiter treat a Redis error as FAIL CLOSED
- *   - the Log-list cache treats a Redis error as FAIL OPEN
- * An error on the client itself is logged but never crashes the process.
+ *   - the content/log caches treat a Redis error as FAIL OPEN
+ *
+ * `automaticDeserialization: false` keeps `get`/`set` as plain strings so the
+ * callers' own `JSON.stringify` / `JSON.parse` stays the single source of
+ * (de)serialization — the same contract the previous ioredis client had.
  */
-export const redis = new Redis(config.REDIS_URL, {
-  maxRetriesPerRequest: 2,
-  commandTimeout: 3000,
-  enableOfflineQueue: true,
-  retryStrategy: (times) => Math.min(times * 200, 2000),
-  lazyConnect: false,
-});
-
-redis.on("error", (err: unknown) => {
-  logger.error({ err }, "redis client error");
+export const redis = new Redis({
+  url: config.UPSTASH_REDIS_REST_URL,
+  token: config.UPSTASH_REDIS_REST_TOKEN,
+  automaticDeserialization: false,
 });
 
 export async function pingRedis(): Promise<boolean> {

@@ -124,15 +124,17 @@ implementation until all four are read.
 Tell the tool: "Create `backend/` as an independent Node.js + Express + TypeScript
 server (its own `package.json`, not part of any Next.js project). It will be deployed on
 Railway as a persistent server. Set up: a typed Express app, a health endpoint, a
-Postgres connection (Neon or Supabase) via a light query client, a Redis connection
-(Railway Redis / Upstash), the `log_entries` migration, structured error handling, a
+Postgres connection (Neon or Supabase) via a light query client, an **Upstash Redis
+client (`@upstash/redis`, REST — `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`;
+no `REDIS_URL`/TCP client)**, the `log_entries` migration, structured error handling, a
 strict JSON body-size limit, and environment-variable loading with validation. No
 routes beyond `/health` yet. Follow `docs/architecture.md` §1, §6, §10 exactly. Keep
 dependencies minimal (constraint C16)."
 
 **Security**
 - Load and **validate** all backend env vars at boot. Distinguish two cases:
-  - **Missing / malformed config → fail fast.** If `DATABASE_URL`, `REDIS_URL`,
+  - **Missing / malformed config → fail fast.** If `DATABASE_URL`,
+    `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`,
     `ADMIN_PASSWORD`, `SESSION_SECRET`, or `CORS_ALLOWED_ORIGINS` is absent or fails its
     Zod check, exit non-zero with a clear message. The process must not start.
   - **Config present but a dependency is unreachable at boot → do NOT fail fast.** A
@@ -975,15 +977,17 @@ implementation until all four are read.
 Tell the tool: "Deploy the two services. **Frontend → Vercel** (root directory
 `frontend/`, Next.js preset) with server-only `BACKEND_URL=<backend URL>` and
 `NEXT_PUBLIC_SITE_URL=<frontend URL>`; **no** `NEXT_PUBLIC_BACKEND_URL`. **Backend →
-Vercel or Railway** with its own env vars (`DATABASE_URL`, `REDIS_URL`,
-`ADMIN_PASSWORD`, `SESSION_SECRET`, `SESSION_TTL_SECONDS`, `NODE_ENV=production`,
-`TRUST_PROXY_HOPS`, `LOG_CACHE_TTL_SECONDS`, `RESEND_API_KEY`,
+Vercel or Railway** with its own env vars (`DATABASE_URL`, `UPSTASH_REDIS_REST_URL`,
+`UPSTASH_REDIS_REST_TOKEN`, `ADMIN_PASSWORD`, `SESSION_SECRET`, `SESSION_TTL_SECONDS`,
+`NODE_ENV=production`, `TRUST_PROXY_HOPS`, `LOG_CACHE_TTL_SECONDS`, `RESEND_API_KEY`,
 `BLOB_READ_WRITE_TOKEN`, `BLOB_ALLOWED_HOSTS`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL`,
-`CORS_ALLOWED_ORIGINS=<frontend URL>`) — and **`COOKIE_DOMAIN` left unset**. No custom
-domain, no shared parent domain. The frontend's `next.config.ts` `rewrites()` proxies
-`/api/backend/*` → `BACKEND_URL/api/*` server-side, so the admin `sid` cookie is a
-first-party host-only cookie. Provision production Postgres + Redis, run the migration,
-verify against `docs/constraints.md`, then metadata/OG, sitemap/robots, and analytics."
+`CORS_ALLOWED_ORIGINS=<frontend URL>`) — and **`COOKIE_DOMAIN` left unset**. Redis is
+Upstash over its REST API (`@upstash/redis`) — no `REDIS_URL`/TCP client, which is what
+makes it safe on serverless. No custom domain, no shared parent domain. The frontend's
+`next.config.ts` `rewrites()` proxies `/api/backend/*` → `BACKEND_URL/api/*`
+server-side, so the admin `sid` cookie is a first-party host-only cookie. Provision
+production Postgres + an Upstash Redis database, run the migration, verify against
+`docs/constraints.md`, then metadata/OG, sitemap/robots, and analytics."
 
 **Security**
 - All backend secrets set in the backend platform's project settings; none in the repo,
@@ -1083,7 +1087,7 @@ Run this checklist against the live production URLs:
 - Simulate Redis down in production briefly: content pages still work (fail open); admin
   login fails closed.
 - View source / bundle inspection on the frontend: no secret, no `ADMIN_PASSWORD`, no
-  `DATABASE_URL`, no `REDIS_URL`, no API keys, **no backend URL**, no session token in
+  `DATABASE_URL`, no Redis credentials, no API keys, **no backend URL**, no session token in
   storage.
 - Repo-wide grep: no DB/Redis/email/blob client in `frontend/`; **no `app/api/` route
   handlers** (the proxy is a `next.config.ts` rewrite, not a Route Handler); Redis in

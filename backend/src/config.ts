@@ -38,7 +38,11 @@ const schema = z.object({
 
   // --- Data stores (required) ---
   DATABASE_URL: z.string().url(),
-  REDIS_URL: z.string().url(),
+  // Redis is Upstash over its REST API (`@upstash/redis`) — stateless HTTP, no
+  // connection pool, safe for serverless. Both values come from the Upstash
+  // console (Database → REST API). There is NO `REDIS_URL` / TCP client any more.
+  UPSTASH_REDIS_REST_URL: z.string().url(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1, "UPSTASH_REDIS_REST_TOKEN is required"),
 
   // --- Admin auth (required) ---
   ADMIN_PASSWORD: z.string().min(8, "ADMIN_PASSWORD must be at least 8 characters"),

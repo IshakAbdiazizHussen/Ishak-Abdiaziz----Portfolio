@@ -12,17 +12,38 @@ anything here.
 
 - Node >= 20
 - A Postgres database (Neon or Supabase) — `DATABASE_URL`
-- A Redis instance (Railway Redis / Upstash) — `REDIS_URL`
+- An **Upstash Redis** database — `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`
+  (from the Upstash console → Database → "REST API"). The client is `@upstash/redis`
+  over HTTP — stateless, no connection pool, works on serverless. There is **no**
+  `REDIS_URL` / TCP client.
 
 ## Local setup
 
 ```bash
 cd backend
 npm install
-cp .env.example .env      # then fill in DATABASE_URL, REDIS_URL, ADMIN_PASSWORD, SESSION_SECRET
+cp .env.example .env      # fill in DATABASE_URL, UPSTASH_REDIS_REST_URL,
+                          #   UPSTASH_REDIS_REST_TOKEN, ADMIN_PASSWORD, SESSION_SECRET
 npm run migrate           # apply db/*.sql to the database in DATABASE_URL
-npm run dev               # http://localhost:4000
+npm run dev               # http://localhost:4000  (starts a throwaway Postgres via ./dev.sh)
 ```
+
+**Local Redis, two options:**
+
+1. **Simplest** — point `UPSTASH_REDIS_REST_URL/_TOKEN` at an Upstash database. Use a
+   *separate* free database for local so you don't share session/cache state with
+   production.
+2. **Fully offline / isolated** — run the Upstash-REST-compatible shim in front of a
+   local Redis:
+   ```bash
+   docker run -d --rm --name pf-redis -p 6400:6379 redis:7-alpine
+   docker run -d --rm --name pf-srh -p 8079:80 \
+     -e SRH_MODE=env -e SRH_TOKEN=local_dev_token \
+     -e SRH_CONNECTION_STRING="redis://host.docker.internal:6400" \
+     hiett/serverless-redis-http:latest
+   # .env: UPSTASH_REDIS_REST_URL=http://localhost:8079
+   #       UPSTASH_REDIS_REST_TOKEN=local_dev_token
+   ```
 
 Check it: `curl -s localhost:4000/health` → `{"ok":true,"postgres":true,"redis":true}`.
 
@@ -44,8 +65,10 @@ Check it: `curl -s localhost:4000/health` → `{"ok":true,"postgres":true,"redis
 Every variable is documented in `.env.example`. Policy:
 
 - **Missing / malformed required config → the process exits at startup.** Required:
-  `DATABASE_URL`, `REDIS_URL`, `ADMIN_PASSWORD`, `SESSION_SECRET`, `CORS_ALLOWED_ORIGINS`,
-  `BLOB_READ_WRITE_TOKEN`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL`.
+  `DATABASE_URL`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `ADMIN_PASSWORD`,
+  `SESSION_SECRET`, `CORS_ALLOWED_ORIGINS`, `RESEND_API_KEY`, `CONTACT_TO_EMAIL`,
+  `CONTACT_FROM_EMAIL`. (`BLOB_READ_WRITE_TOKEN` is optional — blank falls back to the
+  local-disk storage driver, which is dev-only.)
 - **Present-but-unreachable Postgres/Redis → the server still starts**; `GET /health`
   returns `503` with per-dependency status and recovers on its own when the dependency
   comes back.

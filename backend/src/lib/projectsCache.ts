@@ -15,7 +15,7 @@ const KEY = "cache:projects";
 
 export async function readCachedProjects(): Promise<Project[] | null> {
   try {
-    const json = await redis.get(KEY);
+    const json = await redis.get<string>(KEY);
     if (!json) return null;
     return JSON.parse(json) as Project[];
   } catch (err) {
@@ -26,7 +26,7 @@ export async function readCachedProjects(): Promise<Project[] | null> {
 
 export async function writeCachedProjects(projects: Project[]): Promise<void> {
   try {
-    await redis.set(KEY, JSON.stringify(projects), "EX", config.LOG_CACHE_TTL_SECONDS);
+    await redis.set(KEY, JSON.stringify(projects), { ex: config.LOG_CACHE_TTL_SECONDS });
   } catch (err) {
     logger.warn({ err }, "projects cache write failed (ignored)");
   }

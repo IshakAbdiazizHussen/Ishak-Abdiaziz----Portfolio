@@ -111,15 +111,15 @@ is an HTTP call from the frontend to the backend.
           ▼                 ▼                  ▼                   ▼
   ┌───────────────┐ ┌───────────────┐ ┌────────────────────┐ ┌──────────────────┐
   │ Postgres      │ │ Redis         │ │ Blob image storage │ │ Email provider   │
-  │ (Neon /       │ │ (Railway      │ │ (Vercel Blob /     │ │ (Resend or sim.) │
-  │  Supabase)    │ │  Redis plugin │ │  Cloudinary)       │ │                  │
-  │               │ │  or Upstash)  │ │                    │ │ sends contact    │
+  │ (Neon /       │ │ (Upstash —    │ │ (Vercel Blob /     │ │ (Resend or sim.) │
+  │  Supabase)    │ │  @upstash/    │ │  Cloudinary)       │ │                  │
+  │               │ │  redis, REST) │ │                    │ │ sends contact    │
   │ content_blocks│ │ - sessions    │ │ stores image files,│ │ form emails      │
-  │ projects      │ │ - short-TTL   │ │ returns public URL │ │                  │
-  │ project_stats │ │   cache, per  │ │                    │ │                  │
-  │ toolbox_groups│ │   content area│ │                    │ │                  │
-  │ toolbox_items │ │               │ │                    │ │                  │
-  │ log_entries   │ │               │ │                    │ │                  │
+  │ projects      │ │ - rate-limit  │ │ returns public URL │ │                  │
+  │ project_stats │ │   windows     │ │                    │ │                  │
+  │ toolbox_groups│ │ - short-TTL   │ │                    │ │                  │
+  │ toolbox_items │ │   cache, per  │ │                    │ │                  │
+  │ log_entries   │ │   content area│ │                    │ │                  │
   └───────────────┘ └───────────────┘ └────────────────────┘ └──────────────────┘
         ▲ backend only    ▲ backend only     ▲ backend only        ▲ backend only
 ```
@@ -131,7 +131,7 @@ is an HTTP call from the frontend to the backend.
 | **Frontend** | Next.js App Router (TS) on Vercel | Presentation only. Renders all 6 pages inside a **fixed layout** (design tokens, components, navigation — never database-driven, see §3). Every page's *content* is fetched from the backend, ISR-cached, rather than hardcoded. Client-side `fetch` to the backend for admin login and every admin write. Contact form POSTs to the backend. **No DB client, no secrets, no auth logic, no email logic.** |
 | **Backend** | Node.js + Express + TypeScript on Railway | All business logic, all data access, all secrets. Exposes the REST API for every content area, plus Log and contact. Talks to Postgres, Redis, blob storage, and the email provider. Enforces auth and CORS. |
 | **Postgres** | Neon or Supabase | Stores **all owner-editable content**: `content_blocks` (Intro, How I Got Here, Let's Talk links), `projects` + `project_stats` (Built), `toolbox_groups` + `toolbox_items` (Toolbox), and `log_entries` (Log). See §3 for the schema. Accessed only by the backend. |
-| **Redis** | Railway Redis plugin (or Upstash) | (1) Admin **session storage**. (2) Optional **short-TTL cache** (30–60s) of each content area's public GET response — the pattern originally built for `GET /api/log`, now used for every content area. Nothing else. Accessed only by the backend. |
+| **Redis** | Upstash, accessed via `@upstash/redis` over its **REST API** (stateless HTTP — no TCP client, no connection pool, works on serverless) | (1) Admin **session storage**. (2) **Rate-limit windows** for login/contact. (3) **Short-TTL cache** (30–60s) of each content area's public GET response — the pattern originally built for `GET /api/log`, now used for every content area. Nothing else. Accessed only by the backend. |
 | **Blob storage** | Vercel Blob or Cloudinary | Stores uploaded images — Log entry images and content image fields (Intro hero photo, How I Got Here photo). The DB only ever holds the returned URL string, never bytes. Written only by the backend's upload endpoints. |
 | **Email provider** | Resend or similar | Delivers contact-form messages to the owner's inbox. Called only by the backend's contact endpoint. No DB. |
 
@@ -852,7 +852,7 @@ That is the whole list. The frontend holds **no** database URL, **no** API keys,
 | Variable | Used by | Purpose |
 | --- | --- | --- |
 | `DATABASE_URL` | Postgres client | Connection string (SSL enforced) |
-| `REDIS_URL` | Redis client | Connection string for sessions + per-content-area caches |
+| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | Redis client (`@upstash/redis`, REST) | Sessions + rate-limit windows + per-content-area caches. HTTP, stateless, no pool — safe for serverless. There is no `REDIS_URL` / TCP client. |
 | `ADMIN_PASSWORD` | `/api/admin/login` | The single shared admin password, gating the whole content admin panel |
 | `SESSION_SECRET` | session middleware | Signs/encrypts the session cookie value |
 | `SESSION_TTL_SECONDS` *(optional)* | session middleware | Session lifetime, TTL slid forward on each authed request (default e.g. 7 days) |

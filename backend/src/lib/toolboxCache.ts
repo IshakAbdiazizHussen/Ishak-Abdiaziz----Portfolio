@@ -16,7 +16,7 @@ const KEY = "cache:toolbox";
 
 export async function readCachedToolbox(): Promise<ToolboxGroup[] | null> {
   try {
-    const json = await redis.get(KEY);
+    const json = await redis.get<string>(KEY);
     if (!json) return null;
     return JSON.parse(json) as ToolboxGroup[];
   } catch (err) {
@@ -27,7 +27,7 @@ export async function readCachedToolbox(): Promise<ToolboxGroup[] | null> {
 
 export async function writeCachedToolbox(groups: ToolboxGroup[]): Promise<void> {
   try {
-    await redis.set(KEY, JSON.stringify(groups), "EX", config.LOG_CACHE_TTL_SECONDS);
+    await redis.set(KEY, JSON.stringify(groups), { ex: config.LOG_CACHE_TTL_SECONDS });
   } catch (err) {
     logger.warn({ err }, "toolbox cache write failed (ignored)");
   }

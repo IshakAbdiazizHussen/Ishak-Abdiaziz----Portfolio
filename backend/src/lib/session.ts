@@ -89,7 +89,7 @@ export async function createSession(req: Request, res: Response): Promise<void> 
     createdAt: new Date().toISOString(),
     uaHash: uaHash(req),
   };
-  await redis.set(`${KEY_PREFIX}${id}`, JSON.stringify(data), "EX", config.SESSION_TTL_SECONDS);
+  await redis.set(`${KEY_PREFIX}${id}`, JSON.stringify(data), { ex: config.SESSION_TTL_SECONDS });
   setCookie(res, id);
 }
 
@@ -106,7 +106,7 @@ export async function readSession(req: Request, res: Response): Promise<SessionD
   const id = unsign(raw);
   if (!id) return null;
 
-  const json = await redis.get(`${KEY_PREFIX}${id}`);
+  const json = await redis.get<string>(`${KEY_PREFIX}${id}`);
   if (!json) return null;
 
   let data: SessionData;

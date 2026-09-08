@@ -12,7 +12,7 @@ const KEY = "cache:log:list";
 
 export async function readCachedList(): Promise<LogEntry[] | null> {
   try {
-    const json = await redis.get(KEY);
+    const json = await redis.get<string>(KEY);
     if (!json) return null;
     return JSON.parse(json) as LogEntry[];
   } catch (err) {
@@ -23,7 +23,7 @@ export async function readCachedList(): Promise<LogEntry[] | null> {
 
 export async function writeCachedList(entries: LogEntry[]): Promise<void> {
   try {
-    await redis.set(KEY, JSON.stringify(entries), "EX", config.LOG_CACHE_TTL_SECONDS);
+    await redis.set(KEY, JSON.stringify(entries), { ex: config.LOG_CACHE_TTL_SECONDS });
   } catch (err) {
     logger.warn({ err }, "log cache write failed (ignored)");
   }

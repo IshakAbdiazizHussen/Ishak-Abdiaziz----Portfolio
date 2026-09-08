@@ -16,7 +16,7 @@ const keyFor = (area: ContentArea): string => `cache:content:${area}`;
 
 export async function readCachedArea(area: ContentArea): Promise<Record<string, string> | null> {
   try {
-    const json = await redis.get(keyFor(area));
+    const json = await redis.get<string>(keyFor(area));
     if (!json) return null;
     return JSON.parse(json) as Record<string, string>;
   } catch (err) {
@@ -30,7 +30,7 @@ export async function writeCachedArea(
   fields: Record<string, string>,
 ): Promise<void> {
   try {
-    await redis.set(keyFor(area), JSON.stringify(fields), "EX", config.LOG_CACHE_TTL_SECONDS);
+    await redis.set(keyFor(area), JSON.stringify(fields), { ex: config.LOG_CACHE_TTL_SECONDS });
   } catch (err) {
     logger.warn({ err, area }, "content cache write failed (ignored)");
   }

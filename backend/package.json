@@ -19,13 +19,13 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@upstash/redis": "^1.38.4",
     "@vercel/blob": "^2.8.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "helmet": "^8.0.0",
-    "ioredis": "^5.4.2",
     "multer": "^2.0.1",
     "pdf-to-img": "^7.0.0",
     "pino": "^9.5.0",

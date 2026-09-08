@@ -33,8 +33,8 @@ never *become*.
   - the only code that connects to Redis is in the backend;
   - the only code that uploads to blob storage is in the backend;
   - the only code that calls the email provider is in the backend;
-  - the only place `ADMIN_PASSWORD`, `SESSION_SECRET`, `DATABASE_URL`, `REDIS_URL`, and
-    API keys exist is the backend's environment.
+  - the only place `ADMIN_PASSWORD`, `SESSION_SECRET`, `DATABASE_URL`, the Upstash Redis
+    REST credentials, and API keys exist is the backend's environment.
 - There are **no Next.js API routes** anywhere. The frontend reaches dynamic behavior
   only by calling the backend's REST API over HTTPS.
 
@@ -226,7 +226,8 @@ Forbidden:
 
 ## C12. Secrets are backend-only
 
-- `DATABASE_URL`, `REDIS_URL`, `ADMIN_PASSWORD`, `SESSION_SECRET`, `RESEND_API_KEY`,
+- `DATABASE_URL`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `ADMIN_PASSWORD`,
+  `SESSION_SECRET`, `RESEND_API_KEY`,
   blob storage tokens, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL` are environment
   variables on the **backend** service only.
 - Nothing sensitive is prefixed `NEXT_PUBLIC_`. Nothing sensitive appears in the

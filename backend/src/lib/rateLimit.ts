@@ -9,8 +9,9 @@ import { AppError } from "./errors";
  * the protected endpoint is never allowed to run unthrottled.
  *
  * The window key is created atomically with its TTL (`SET ... EX ... NX` then
- * `INCR` in one MULTI), so a lost `EXPIRE` can never strand a permanent key and
- * lock the caller out forever.
+ * `INCR` in one MULTI/EXEC transaction), so a lost `EXPIRE` can never strand a
+ * permanent key and lock the caller out forever. `@upstash/redis`'s `multi()`
+ * issues a real `MULTI`/`EXEC` and throws if the transaction fails.
  */
 export async function limit(
   scope: string,
@@ -24,14 +25,12 @@ export async function limit(
   try {
     const results = await redis
       .multi()
-      .set(redisKey, "0", "EX", windowSec, "NX")
+      .set(redisKey, "0", { ex: windowSec, nx: true })
       .incr(redisKey)
       .exec();
 
-    const incr = results?.[1];
-    if (!incr) throw new Error("rate limiter: empty MULTI result");
-    if (incr[0]) throw incr[0]; // command-level error
-    count = Number(incr[1]);
+    // [setReply, incrReply]; a failed transaction throws before we get here.
+    count = Number(results[1]);
     if (!Number.isFinite(count)) throw new Error("rate limiter: non-numeric counter");
   } catch (err) {
     if (err instanceof AppError) throw err;
