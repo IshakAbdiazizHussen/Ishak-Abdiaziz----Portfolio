@@ -1,22 +1,15 @@
 /**
- * Public runtime configuration. The frontend holds NO secrets (constraint C3) —
- * only `NEXT_PUBLIC_*` values that are safe to ship in the browser bundle.
+ * Public runtime configuration. The frontend holds NO secrets (constraint C3).
+ *
+ * The backend's URL is NOT here any more: it is `BACKEND_URL`, a server-only
+ * env var read directly in `lib/backend.ts` (server branch) and
+ * `next.config.ts` (the rewrite + CSP). The browser never needs it — client
+ * calls go through the same-origin `/api/backend/*` proxy.
  */
-
-const RAW_BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-
-if (!RAW_BACKEND_URL && process.env.NODE_ENV !== "test") {
-  throw new Error(
-    "NEXT_PUBLIC_BACKEND_URL is not set. Copy frontend/.env.example to " +
-      "frontend/.env.local and set it (local: http://localhost:4000).",
-  );
-}
 
 const stripTrailingSlash = (v: string) => v.replace(/\/+$/, "");
 
 export const env = {
-  /** Base URL of the backend REST API. No trailing slash. */
-  backendUrl: stripTrailingSlash(RAW_BACKEND_URL ?? ""),
   /** This site's own canonical URL, for metadata / OG / sitemap. May be undefined. */
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL
     ? stripTrailingSlash(process.env.NEXT_PUBLIC_SITE_URL)

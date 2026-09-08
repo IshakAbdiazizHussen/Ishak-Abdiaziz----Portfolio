@@ -80,9 +80,12 @@ is an HTTP call from the frontend to the backend.
                     │                   Let's Talk links)            │
                     └───────────────┬───────────────────────────────┘
                                     │
-                                    │  HTTPS  (CORS: only the known
-                                    │          frontend origin(s),
-                                    │          credentials allowed)
+                                    │  Browser calls  →  same-origin  /api/backend/*
+                                    │    on the frontend URL, which next.config.ts
+                                    │    rewrites() forwards to BACKEND_URL server-side
+                                    │    (no CORS, first-party cookie — §13).
+                                    │  ISR/SSR calls  →  BACKEND_URL directly
+                                    │    (server-to-server).
                                     ▼
                     ┌───────────────────────────────────────────────┐
                     │                  Railway                       │
@@ -351,13 +354,14 @@ time.
 
 ## 6. Data flow: owner logging in
 
-> **Deployment prerequisite — the two services share one registrable domain.**
-> The frontend is served from the apex/`www` (e.g. `ishak.dev`) and the backend from a
-> subdomain of the same domain (e.g. `api.ishak.dev`). This is required so the session
-> cookie works — see the "Session cookie" note below and §13. On the default platform
-> hostnames (`*.vercel.app` + `*.up.railway.app`) the cookie approach does **not**
-> work; custom domains on a shared parent are part of the design, not an optional
-> polish step.
+> **Deployment prerequisite — every browser→backend request is same-origin.**
+> Currently achieved with a **same-origin reverse proxy**: the browser calls
+> `/api/backend/*` on the frontend's own URL and `next.config.ts`'s `rewrites()`
+> forwards it to `BACKEND_URL` server-side (§13). So the `POST` below is really
+> `POST https://<frontend>.vercel.app/api/backend/admin/login`, the browser sees only
+> its own origin, and the `Set-Cookie` is first-party with **no `Domain`** attribute.
+> A real shared parent domain (`yourdomain.com` + `api.yourdomain.com`) would let the
+> proxy be removed later, but is not required.
 
 ```
 1. Owner opens /admin on the frontend (the full content admin panel — Intro,
@@ -365,13 +369,14 @@ time.
    this one login). No valid session cookie present → the page shows a
    password prompt.
 2. Owner submits the shared password:
-       POST https://api.<domain>/api/admin/login
+       POST /api/backend/admin/login          (same-origin on the frontend URL;
+                                               Vercel rewrites → BACKEND_URL/api/admin/login)
        Content-Type: application/json
        credentials: 'include'          <-- so the Set-Cookie sticks
        body: { password }
-3. Backend CORS middleware validates the Origin AND runs with
-   credentials: true + an explicit allowed origin (never "*", which is
-   incompatible with credentials).
+3. The request arrives at the backend via the frontend's server-side rewrite.
+   CORS is not consulted by the browser (the call was same-origin); the backend's
+   CORS middleware still runs but is now defense-in-depth (§13).
 4. Backend /api/admin/login handler:
      a. Strict body-size limit; validate the payload shape.
      b. Rate limit BEFORE the compare, keyed by client IP (see §13 / trust
@@ -385,8 +390,9 @@ time.
           - reset the login rate-limit counter for this IP (DEL ratelimit:login:<ip>)
           - set the session ID on the response as a cookie:
               Set-Cookie: sid=<signed id>;
-                HttpOnly; Secure; SameSite=Lax; Domain=.<domain>; Path=/;
-                Max-Age=<TTL>
+                HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=<TTL>
+                (NO Domain= — host-only; the browser attaches it to the frontend
+                 origin because the response came back through the proxy)
      e. Respond 200 { ok: true }.
 5. The browser stores the HttpOnly cookie. The frontend JS never reads it and
    never sees ADMIN_PASSWORD or SESSION_SECRET.
@@ -415,18 +421,18 @@ time.
                                                                           │
                                           SET session:<id> EX <ttl> ──▶ [Redis]
                                                                           │
-[Browser] ◀── Set-Cookie: sid=<id>; HttpOnly; Secure; SameSite=Lax; Domain=.<domain> ┘
+[Browser] ◀── Set-Cookie: sid=<id>; HttpOnly; Secure; SameSite=Lax; Path=/  (no Domain) ┘
+                (forwarded back through the frontend's rewrite → first-party)
 ```
 
-> **Session token approach — decided:** an **HttpOnly, Secure, `SameSite=Lax` cookie
-> with `Domain=.<shared-domain>`**, carrying an opaque signed session ID, with the
+> **Session token approach — decided:** an **HttpOnly, Secure, `SameSite=Lax`,
+> host-only cookie (no `Domain`)**, carrying an opaque signed session ID, with the
 > session record in Redis. Not a bearer token in JS-readable storage.
 >
-> - **Why `SameSite=Lax` and not `None`:** `SameSite` is evaluated on the registrable
->   domain (eTLD+1), not the host. With the frontend on `<domain>` and the backend on
->   `api.<domain>`, admin requests are **same-site**, so `Lax` is sufficient and the
->   cookie is not a third-party cookie. A `SameSite=None` cross-site cookie would be
->   blocked outright by Safari/ITP and is being phased out in Chrome — it would break
+> - **Why `SameSite=Lax` and not `None`:** every browser→backend call is same-origin
+>   (it goes to `/api/backend/*` on the frontend's own URL — §13), so `Lax` is
+>   sufficient and the cookie is first-party. A `SameSite=None` cross-site cookie would
+>   be blocked outright by Safari/ITP and is being phased out in Chrome — it would break
 >   admin login on the author's own devices. `Lax` also closes the logout-CSRF hole
 >   that `None` opens.
 > - **Why HttpOnly + Redis:** HttpOnly keeps the credential out of reach of any XSS on
@@ -434,10 +440,11 @@ time.
 >   and is a natural fit for a persistent server.
 > - **`SESSION_SECRET`** signs/verifies the cookie value (and/or encrypts the payload)
 >   so a tampered `sid` is rejected before the Redis lookup.
-> - **Fallback if a shared parent domain is ever unavailable:** switch admin-only auth
->   to a bearer token returned from `/api/admin/login` and held in frontend JS memory
->   (never `localStorage`), sent as `Authorization: Bearer`. This loses the HttpOnly
->   protection, so it is the fallback, not the default.
+> - **No shared parent domain?** Handled by the §13 same-origin proxy — the cookie
+>   flow above is unchanged. The last-resort fallback (only if even the proxy were
+>   impossible) is a bearer token returned from `/api/admin/login`, held in frontend JS
+>   memory (never `localStorage`), sent as `Authorization: Bearer` — it loses HttpOnly
+>   protection, so it is the last resort, not the default.
 
 ---
 
@@ -726,59 +733,100 @@ is auth-only.
 
 ---
 
-## 13. CORS and the shared parent domain
+## 13. Same-origin access to the backend (proxy now; shared domain later)
 
-### Domain layout (decided)
+### The requirement
 
-Both services run under **one registrable domain**:
+The session design (§6) needs every **browser→backend** request to be **same-site**, so
+the `sid` cookie is a first-party `SameSite=Lax` cookie and never a third-party cookie
+(Safari/ITP blocks those; Chrome is phasing them out).
+
+### How it is met now — a same-origin reverse proxy (interim, complete)
+
+The frontend and backend deploy to two different `*.vercel.app` URLs — different
+registrable domains, no shared parent. Instead of a custom domain, **the frontend
+proxies every browser→backend call through its own origin**:
+
+```
+Browser (https://<frontend>.vercel.app/admin)
+   │  fetch('/api/backend/admin/login', { credentials: 'include' })   ← same-origin
+   ▼
+Vercel edge (frontend project)
+   │  next.config.ts rewrites()  —  /api/backend/:path*  →  ${BACKEND_URL}/api/:path*
+   ▼  (server-side, inside Vercel; the browser never sees this hop)
+Backend  (https://<backend>.vercel.app/api/admin/login)
+   │  Set-Cookie: sid=…; HttpOnly; Secure; SameSite=Lax; Path=/     ← NO Domain=
+   ▼
+Vercel edge forwards the response (incl. Set-Cookie) back
+   ▼
+Browser stores `sid` as a first-party host-only cookie for <frontend>.vercel.app
+```
+
+- Client code (`lib/backend.ts`, browser branch) calls the same-origin path
+  `/api/backend/*`. **No CORS**, no preflight, no cross-site cookie.
+- Server code (`lib/backend.ts`, server branch — ISR/SSR/build for `lib/content.ts`
+  and `lib/log.ts`) skips the proxy and calls `BACKEND_URL` **directly**
+  (server-to-server, no `Origin`). Unchanged by this.
+- `rewrites()` is Next.js **config**, not a Route Handler — C1/C3 still hold (no
+  `app/api/`, no request code in the frontend).
+- The backend cookie carries **no `Domain` attribute** (`COOKIE_DOMAIN` unset). CORS
+  (below) is now defense-in-depth, not load-bearing.
+- `BACKEND_URL` is **server-only** (no `NEXT_PUBLIC_` prefix) — the backend's real URL
+  is never in the browser bundle.
+
+### The end state — a real shared parent domain (preferred, not required)
 
 | Service | Host (example) | Platform |
 | --- | --- | --- |
-| Frontend | `ishak.dev` (and `www.ishak.dev`) | Vercel |
-| Backend | `api.ishak.dev` | Railway |
+| Frontend | `yourdomain.com` (and `www`) | Vercel |
+| Backend | `api.yourdomain.com` | Vercel / Railway |
 
-This is a hard requirement of the session design (§6): because `SameSite` is judged on
-the registrable domain, `ishak.dev` ↔ `api.ishak.dev` requests are **same-site**, so the
-`sid` cookie is `SameSite=Lax` with `Domain=.ishak.dev` and is never a third-party
-cookie. The default platform hostnames (`*.vercel.app`, `*.up.railway.app`) are
-different registrable domains and will not work for the cookie — custom domains are
-part of the architecture, not a finishing touch.
+With both under one registrable domain, `yourdomain.com` ↔ `api.yourdomain.com` requests
+are same-site directly, the `sid` cookie becomes `SameSite=Lax; Domain=.yourdomain.com`,
+and **the proxy can be deleted** in favor of direct cross-subdomain calls
+(reintroducing a public `NEXT_PUBLIC_BACKEND_URL` and a real CORS allowlist). This is a
+"once a domain is bought" cleanup, **not a correctness blocker** — the proxy is a
+complete solution at zero cost.
 
 ### CORS rules
 
-- The backend sets CORS explicitly: `Access-Control-Allow-Origin` is an **exact match**
-  against an allowlist (`CORS_ALLOWED_ORIGINS`), never `*`.
-- Allowlist contents:
-  - the production frontend origin(s): `https://ishak.dev`, `https://www.ishak.dev`,
-  - `http://localhost:3000` during development.
-- `Access-Control-Allow-Credentials: true` (required for the `sid` cookie). This is
-  **incompatible with `*`**, which is another reason the allowlist must be explicit.
-- Allowed methods: `GET, POST, PUT, OPTIONS`. Allowed headers: `Content-Type`.
-  Preflight (`OPTIONS`) handled for the POST/PUT endpoints; preflight response cached
-  10 minutes.
+**With the same-origin proxy, CORS is defense-in-depth, not load-bearing.** No browser
+request reaches the backend cross-origin any more (browser calls go to the frontend's
+own `/api/backend/*`; ISR/SSR calls are server-to-server with no `Origin`). The app
+works even if `CORS_ALLOWED_ORIGINS` is wrong. Keep it correct regardless:
+
+- `Access-Control-Allow-Origin` is an **exact match** against an allowlist
+  (`CORS_ALLOWED_ORIGINS`), never `*`.
+- Allowlist contents: the production frontend origin (e.g.
+  `https://<frontend>.vercel.app`) plus `http://localhost:3000`.
+- `Access-Control-Allow-Credentials: true` is kept on for the `sid` cookie. Still
+  **incompatible with `*`**.
+- Allowed methods: `GET, POST, PUT, DELETE, OPTIONS`. Allowed headers: `Content-Type`.
 - A disallowed `Origin` gets **no** `Access-Control-Allow-Origin` header. The request
-  is not rejected server-side — the browser blocks the response. Requests with **no**
-  `Origin` header (curl, server-to-server, same-origin navigations) pass the CORS layer
-  and are still gated by `requireAdmin` where it matters. CORS is a browser control,
-  not the auth boundary.
+  is not rejected server-side — the browser blocks the response (but no browser request
+  is cross-origin now, so this path is dormant). Requests with **no** `Origin` (curl,
+  server-to-server, the proxy) pass the CORS layer and are gated by `requireAdmin`
+  where it matters. CORS is a browser control, not the auth boundary.
 - The check is one pure predicate (`backend/src/lib/originAllowlist.ts`), unit-tested,
   used by the single `cors` middleware. No route sets its own CORS headers.
 
-**Vercel preview deployments — decided.** Every page now calls the backend for its
-content (§4), so unlike the previous revision this is no longer limited to `/log` and
-`/lets-talk`. The backend therefore accepts an optional **`CORS_PREVIEW_ORIGIN_REGEX`**
-— a tight, anchored pattern (e.g. `^https://portfolio-[a-z0-9-]+\.vercel\.app$`); a
-matching `Origin` is allowed through CORS so all **public** GET endpoints work on
-preview URLs. It is **never** `*`, and it does **not** enable the admin cookie flow on
-a preview (the `sid` cookie is still cross-site there). For admin QA on a preview,
-alias it to `preview.<domain>` or run a staging backend. In the simplest setup the
-regex is left unset.
+**Vercel preview deployments.** A preview frontend proxies through **its own** preview
+origin, so `CORS_PREVIEW_ORIGIN_REGEX` is now redundant too — leave it unset. Admin
+*does* work on a preview frontend now (the cookie is first-party to the preview URL),
+provided that preview build has `BACKEND_URL` pointed at a reachable backend.
 
 ### `trust proxy` (affects rate-limit correctness)
 
 - `req.ip` feeds the IP-keyed login/contact rate limiters, so it must not be spoofable.
 - `TRUST_PROXY_HOPS` defaults to **`0`** — trust nothing, `X-Forwarded-For` ignored,
   `req.ip` is the socket address. Correct for local dev and unspoofable.
+- **The proxy adds one hop for browser-originated requests** (browser → frontend edge →
+  backend, instead of browser → backend). `X-Forwarded-For` is forwarded with the real
+  client IP still leftmost. After deploying, verify the login and (especially) contact
+  rate limiters key on the real client IP, not the frontend edge's — bump
+  `TRUST_PROXY_HOPS` by 1 if `req.ip` resolves to a proxy address. Getting the login
+  limiter wrong is low-impact (one admin); the contact limiter would then lump all
+  visitors together, so check that one.
 - **Railway terminates at exactly one proxy**, so set `TRUST_PROXY_HOPS=1` there:
   `app.set('trust proxy', 1)` trusts only the single hop Railway adds (the real client
   IP), so a client sending its own `X-Forwarded-For` can't override it.
@@ -793,11 +841,11 @@ regex is left unset.
 
 | Variable | Purpose | Notes |
 | --- | --- | --- |
-| `NEXT_PUBLIC_BACKEND_URL` | Base URL of the backend API, e.g. `https://api.ishak.dev` | Public by design; it's just a URL. Used by the frontend fetch helpers for every content area, not just Log. Must be a subdomain of the frontend's own domain (see §13). |
-| `NEXT_PUBLIC_SITE_URL` *(optional)* | The frontend's own canonical URL, e.g. `https://ishak.dev`, for metadata / OG / sitemap | Public. |
+| `BACKEND_URL` | Base URL of the backend API, e.g. `https://<backend>.vercel.app` | **Server-only** (no `NEXT_PUBLIC_` prefix). Used by `next.config.ts` (the `/api/backend/*` rewrite + CSP) and `lib/backend.ts`'s server branch (ISR/SSR). **Never in the browser bundle** — client code calls the same-origin `/api/backend/*` proxy (§13). |
+| `NEXT_PUBLIC_SITE_URL` *(optional)* | The frontend's own canonical URL, e.g. `https://<frontend>.vercel.app`, for metadata / OG / sitemap | Public. |
 
 That is the whole list. The frontend holds **no** database URL, **no** API keys, **no**
-`ADMIN_PASSWORD`, **no** `SESSION_SECRET`.
+`ADMIN_PASSWORD`, **no** `SESSION_SECRET`, and **no browser-visible backend URL**.
 
 ### Backend env vars (all secret / server-only)
 
@@ -808,13 +856,13 @@ That is the whole list. The frontend holds **no** database URL, **no** API keys,
 | `ADMIN_PASSWORD` | `/api/admin/login` | The single shared admin password, gating the whole content admin panel |
 | `SESSION_SECRET` | session middleware | Signs/encrypts the session cookie value |
 | `SESSION_TTL_SECONDS` *(optional)* | session middleware | Session lifetime, TTL slid forward on each authed request (default e.g. 7 days) |
-| `COOKIE_DOMAIN` | session middleware | The shared parent domain for the `sid` cookie, e.g. `.ishak.dev` (leave unset locally so it defaults to `localhost`) |
+| `COOKIE_DOMAIN` | session middleware | **Leave unset everywhere while the §13 proxy is in use** — the `sid` cookie must be host-only. Only set it (`.yourdomain.com`) after migrating to a real shared parent domain and removing the proxy. |
 | `LOG_CACHE_TTL_SECONDS` *(optional)* | `/api/log` and, by the same pattern, the other content GETs | Content cache TTL (default 45) |
 | `RESEND_API_KEY` | `/api/contact` | Email provider auth |
 | `CONTACT_TO_EMAIL` | `/api/contact` | Where contact messages are delivered |
 | `CONTACT_FROM_EMAIL` | `/api/contact` | Verified sender address |
 | `BLOB_READ_WRITE_TOKEN` *(or `CLOUDINARY_*`)* | `/api/log/upload`, `/api/content/upload` | Blob storage auth, shared by every image-upload endpoint |
-| `CORS_ALLOWED_ORIGINS` | CORS middleware | Comma-separated exact origins (`https://ishak.dev,https://www.ishak.dev,http://localhost:3000`) |
+| `CORS_ALLOWED_ORIGINS` | CORS middleware | Comma-separated exact origins, e.g. `https://<frontend>.vercel.app,http://localhost:3000`. Defense-in-depth only now (§13) — set it to the real frontend origin regardless. |
 | `CORS_PREVIEW_ORIGIN_REGEX` *(optional)* | CORS middleware | Anchored regex; a matching Origin is allowed through CORS for the public GET endpoints (Vercel previews). Never `*`. |
 | `TRUST_PROXY_HOPS` *(optional)* | server bootstrap | Proxy hops to trust for `req.ip`. Default `0` (local). **Railway: `1`.** Never fully permissive. |
 | `PORT` | server bootstrap | Provided by Railway |

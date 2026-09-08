@@ -7,10 +7,19 @@ import { redis } from "./redis";
  * Admin session: an opaque random ID, signed into an HttpOnly cookie and stored
  * in Redis so it is revocable (logout / TTL / manual eviction).
  *
- * Cookie is `SameSite=Lax` with `Domain=<COOKIE_DOMAIN>` — the frontend and
- * backend share a registrable domain in production (ishak.dev / api.ishak.dev),
- * so admin requests are same-site and a cross-site `SameSite=None` cookie
- * (blocked by Safari/ITP) is not needed. See docs/architecture.md §5, §9.
+ * Cookie is `HttpOnly; Secure(prod); SameSite=Lax; Path=/` with NO `Domain`
+ * attribute (a host-only cookie). The frontend proxies every browser→backend
+ * call through its own origin (`/api/backend/*`, a Next.js rewrite), so the
+ * `Set-Cookie` the browser receives comes from the frontend's own origin and
+ * the cookie is first-party — `SameSite=Lax` is sufficient and a cross-site
+ * `SameSite=None` cookie (blocked by Safari/ITP) is not needed. See
+ * docs/architecture.md §13 and constraint C4b.
+ *
+ * `COOKIE_DOMAIN` stays supported but MUST be left unset while the proxy is in
+ * use — setting `Domain=` to anything other than the frontend's host would stop
+ * the browser accepting the proxied `Set-Cookie`. It only becomes relevant if
+ * the deployment later moves to a real shared parent domain
+ * (yourdomain.com + api.yourdomain.com) and drops the proxy.
  *
  * FAIL CLOSED: any error reading a session (missing/tampered cookie, Redis miss,
  * Redis error) yields `null` — never a partially-trusted request.

@@ -1,18 +1,35 @@
-const BACKEND_ORIGIN = (process.env.NEXT_PUBLIC_BACKEND_URL ?? "").replace(/\/+$/, "");
+/**
+ * A stored Log attachment is either a Vercel Blob object (production) or a
+ * local-storage-driver file the backend serves at `/uploads/log/...`
+ * (development, no Blob token). The backend validates `image_url` on write, so
+ * a URL that reaches here matching one of those two shapes is trusted.
+ */
 
-/** True if this URL was produced by the Log upload endpoint (Blob or local driver). */
-export function isStoredAttachment(imageUrl: string): boolean {
-  if (!imageUrl) return false;
-  let host: string;
+/** Vercel Blob host — eligible for `next/image` (allow-listed in next.config.ts). */
+export function isBlobHosted(imageUrl: string): boolean {
   try {
-    host = new URL(imageUrl).hostname;
+    return /\.blob\.vercel-storage\.com$/.test(new URL(imageUrl).hostname);
   } catch {
     return false;
   }
-  return (
-    /\.blob\.vercel-storage\.com$/.test(host) ||
-    (BACKEND_ORIGIN !== "" && imageUrl.startsWith(`${BACKEND_ORIGIN}/uploads/`))
-  );
+}
+
+/** The local storage driver: any http(s) URL whose path is `/uploads/log|content/...`. */
+export function isLocalUpload(imageUrl: string): boolean {
+  try {
+    const u = new URL(imageUrl);
+    return (
+      (u.protocol === "http:" || u.protocol === "https:") &&
+      /^\/uploads\/(log|content)\//.test(u.pathname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** True if this URL was produced by the Log upload endpoint (Blob or local driver). */
+export function isStoredAttachment(imageUrl: string): boolean {
+  return isBlobHosted(imageUrl) || isLocalUpload(imageUrl);
 }
 
 export function isPdfAttachment(imageUrl: string): boolean {

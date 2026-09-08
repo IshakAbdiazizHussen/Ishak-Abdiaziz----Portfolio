@@ -65,8 +65,11 @@ Forbidden:
 ## C3. The frontend is presentation only
 
 - No database client, no ORM, no direct Postgres/Redis/blob/email SDK calls.
-- No secret of any kind. The only env vars the frontend holds are public URLs
-  (`NEXT_PUBLIC_BACKEND_URL`, optionally `NEXT_PUBLIC_SITE_URL`).
+- No secret of any kind. The frontend's env vars are `BACKEND_URL` (server-only — used
+  by `next.config.ts`'s proxy rewrite and by `lib/backend.ts`'s server branch during
+  ISR/SSR; never shipped to the browser) and, optionally, the public
+  `NEXT_PUBLIC_SITE_URL`. Browser code never sees the backend's URL — it calls the
+  same-origin `/api/backend/*` proxy path (see C4b).
 - No auth logic beyond: send credentials on the relevant fetch calls, and react to the
   backend's `200`/`401`. The frontend never validates the password, never mints a
   session, never reads the session cookie (it is `HttpOnly`).
@@ -75,26 +78,45 @@ Forbidden:
 
 ## C4. CORS on the backend is locked to known origins
 
+- **Now defense-in-depth, not load-bearing** (since C4b's same-origin proxy): the
+  browser never calls the backend cross-origin, so no browser request is subject to a
+  CORS check. Keep the config correct anyway.
 - `Access-Control-Allow-Origin` is an **exact-match allowlist**
   (`CORS_ALLOWED_ORIGINS`): the production frontend origin(s) plus `http://localhost:3000`.
 - **Never `*`.** It is also technically incompatible with
-  `Access-Control-Allow-Credentials: true`, which the session cookie requires.
-- Allowed methods: `GET, POST, OPTIONS`. Allowed headers: `Content-Type`.
-- Preview deployments do not get wildcard CORS — use a narrow preview-domain rule or a
-  staging backend.
+  `Access-Control-Allow-Credentials: true`, which is kept on for the session cookie.
+- Allowed methods: `GET, POST, PUT, DELETE, OPTIONS`. Allowed headers: `Content-Type`.
+- Preview deployments do not get wildcard CORS — and no longer need a preview-domain
+  rule at all, since a preview frontend proxies through its own origin too.
 - `trust proxy` on the backend is set to the exact number of proxy hops (Railway = 1),
   **never `true`** — a spoofable `req.ip` defeats the IP-keyed rate limiters.
 
-## C4b. The two services share one registrable domain
+## C4b. Every browser→backend request must be same-origin
 
-- The frontend is served from `<domain>` (and `www.<domain>`); the backend from
-  `api.<domain>`. See `docs/architecture.md` §13.
-- This is **required**, not cosmetic: it makes admin requests same-site, so the `sid`
-  cookie is `SameSite=Lax` with `Domain=.<domain>` and is never a third-party cookie
-  (which Safari/ITP blocks and Chrome is phasing out).
-- The default platform hostnames (`*.vercel.app`, `*.up.railway.app`) are different
-  registrable domains and must not be the production origins for the cookie flow.
-- The only sanctioned fallback, if a shared parent domain is ever unavailable, is an
+- The **requirement** is unchanged: the admin session cannot ride a third-party cookie
+  (Safari/ITP blocks `SameSite=None`; Chrome is phasing it out). Every request the
+  browser makes to the backend must be same-site so the `sid` cookie is a first-party
+  `SameSite=Lax` cookie.
+- **How it is satisfied right now — a same-origin reverse proxy (interim).** The two
+  services deploy to two different `*.vercel.app` URLs (different registrable domains),
+  so there is no shared parent domain. Instead, the frontend proxies *all*
+  browser→backend calls through **its own origin**: client code calls
+  `/api/backend/*` on the frontend URL, and `next.config.ts`'s `rewrites()` forwards
+  that to `BACKEND_URL` server-side, inside Vercel's infrastructure. The browser only
+  ever sees its own origin, so the `Set-Cookie` it receives is first-party and no
+  `Domain` attribute is set (host-only cookie). No CORS is involved for browser calls.
+  This is a Next.js config-level rewrite, **not** a Route Handler (C1/C3 still hold —
+  no request code runs in the frontend). See `docs/architecture.md` §13.
+- **The original approach (a real shared parent domain: `yourdomain.com` +
+  `api.yourdomain.com`, cookie `Domain=.yourdomain.com`) is still the preferred
+  end state.** Migrating to it later would let the proxy be deleted in favor of direct
+  cross-subdomain calls. It is **not required for correctness** — the proxy is a
+  complete solution, at no cost — so it is a "when a custom domain is bought", not a
+  blocker.
+- **While the proxy is in use:** `COOKIE_DOMAIN` on the backend MUST be left unset, and
+  `NEXT_PUBLIC_BACKEND_URL` must not exist (the backend URL is `BACKEND_URL`,
+  server-only). Backend CORS (C4) becomes defense-in-depth rather than load-bearing.
+- The still-sanctioned last-resort fallback, if even the proxy were unavailable, is an
   in-memory bearer token for admin auth (never `localStorage`) — a deliberate,
   documented downgrade, not a default.
 
@@ -103,8 +125,9 @@ Forbidden:
 - One shared password (`ADMIN_PASSWORD` on the backend), exchanged for a session.
 - No user table, no signup, no roles, no permissions matrix, no OAuth, no third-party
   identity provider, no magic links.
-- The session is an opaque signed ID in an `HttpOnly; Secure; SameSite=Lax;
-  Domain=.<domain>` cookie (same-site because of C4b), backed by a Redis record and
+- The session is an opaque signed ID in an `HttpOnly; Secure; SameSite=Lax; Path=/`
+  cookie with **no `Domain` attribute** (host-only, first-party because every
+  browser→backend call is same-origin via the C4b proxy), backed by a Redis record and
   signed with `SESSION_SECRET`. Logout, TTL, and manual eviction all work; the TTL
   slides forward on each authed request.
 - Auth **fails closed**: any error verifying a session (missing/tampered cookie, Redis
@@ -313,8 +336,13 @@ constraint:
 - "Let's put the DB client in the frontend so the Log page is faster." (C3)
 - "Let's set CORS to `*` so preview deployments work." (C4)
 - "Let's set `trust proxy` to `true` so it just works on any host." (C4)
-- "Let's just deploy the backend on `*.up.railway.app` and use a `SameSite=None`
-  cookie." (C4b)
+- "Let's just deploy the backend on its own `*.vercel.app` / `*.up.railway.app` URL and
+  use a `SameSite=None` cross-site cookie." (C4b) — the sanctioned answer without a
+  custom domain is the same-origin proxy (`/api/backend/*` rewrite), not a third-party
+  cookie.
+- "Let's add `NEXT_PUBLIC_BACKEND_URL` back so the browser can call the API directly."
+  (C4b) — browser calls go through the same-origin proxy; the URL is `BACKEND_URL`,
+  server-only.
 - "Let's add user accounts / login with GitHub / a second admin." (C5)
 - ~~"Let's fetch the Built stats from the backend so they're easier to edit." (C6,
   C10)~~ — **retired.** This was rejected under the previous, now-superseded version
