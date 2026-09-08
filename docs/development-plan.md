@@ -1018,15 +1018,22 @@ production Postgres + an Upstash Redis database, run the migration, verify again
 
 **Implementation**
 1. **Backend deploy.**
-   - *Vercel:* new project, root `backend/`, build `npm run build`, serverless Node
-     entrypoint. Add all env vars above; **do not set `COOKIE_DOMAIN`**. Note the
-     serverless caveats: cold starts, no persistent FS (Blob token required), and a
-     ~4.5 MB request-body limit (caps large PDF/image uploads).
-   - *Railway (cleaner for a persistent Express server):* service from `backend/`,
-     start `node dist/src/index.js` after `npm run build`, attach Redis, set
-     `DATABASE_URL`, `TRUST_PROXY_HOPS=1`. Same env vars; still **no `COOKIE_DOMAIN`**.
-   - Either way: run `npm run migrate` against production Postgres; confirm
-     `GET /health` on the backend URL is green (Postgres + Redis reachable).
+   - *Vercel:* new project, Root Directory `backend/`, Framework Preset **Other**. The
+     committed `backend/vercel.json` + `backend/api/index.ts` are the whole adapter:
+     `api/index.ts` exports `createApp()` (the same Express app local dev uses — an
+     Express app *is* an `(req, res)` handler, so no `serverless-http`), and the
+     catch-all rewrite routes every path to that one function with `req.url` preserved.
+     `buildCommand` is `npm run typecheck`. Add all env vars above; **do not set
+     `COOKIE_DOMAIN`**. Serverless caveats: cold starts, no persistent FS (Blob token
+     required), a ~4.5 MB request-body limit, and `pdf-to-img`'s runtime `import()` may
+     need a `functions.includeFiles` entry (see `backend/README.md` → Deployment).
+   - *Railway (a plain persistent server):* service from `backend/`, start
+     `node dist/src/index.js` after `npm run build`, set `DATABASE_URL`,
+     `TRUST_PROXY_HOPS=1`. `api/` + `vercel.json` are inert there. Same env vars; still
+     **no `COOKIE_DOMAIN`**.
+   - Migrations are not part of either deploy — run `npm run migrate` against production
+     Postgres from your machine after a schema change. Confirm `GET /health` on the
+     backend URL is green (Postgres + Redis reachable).
 2. **Frontend deploy on Vercel.** New project, root `frontend/`, Next.js preset. Set:
    - `BACKEND_URL` = the backend's URL from step 1 (server-only; Production + Preview).
    - `NEXT_PUBLIC_SITE_URL` = the frontend's own Vercel URL.

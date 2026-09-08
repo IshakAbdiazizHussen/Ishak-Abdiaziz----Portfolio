@@ -88,10 +88,11 @@ is an HTTP call from the frontend to the backend.
                                     │    (server-to-server).
                                     ▼
                     ┌───────────────────────────────────────────────┐
-                    │                  Railway                       │
+                    │            Vercel (or Railway)                 │
                     │   backend/  — Node.js + Express + TypeScript   │
-                    │   Persistent server. Owns ALL logic + secrets.│
-                    │                                               │
+                    │   One serverless fn on Vercel (api/index.ts),  │
+                    │   or app.listen() on Railway. Same app.        │
+                    │   Owns ALL logic + secrets.                    │
                     │   REST API (full list: §11):                  │
                     │     POST      /api/contact                    │
                     │     POST      /api/admin/login                │
@@ -129,7 +130,7 @@ is an HTTP call from the frontend to the backend.
 | Component | Technology | Responsibility |
 | --- | --- | --- |
 | **Frontend** | Next.js App Router (TS) on Vercel | Presentation only. Renders all 6 pages inside a **fixed layout** (design tokens, components, navigation — never database-driven, see §3). Every page's *content* is fetched from the backend, ISR-cached, rather than hardcoded. Client-side `fetch` to the backend for admin login and every admin write. Contact form POSTs to the backend. **No DB client, no secrets, no auth logic, no email logic.** |
-| **Backend** | Node.js + Express + TypeScript on Railway | All business logic, all data access, all secrets. Exposes the REST API for every content area, plus Log and contact. Talks to Postgres, Redis, blob storage, and the email provider. Enforces auth and CORS. |
+| **Backend** | Node.js + Express + TypeScript. On **Vercel** it runs as a single serverless function (`api/index.ts` exports the Express `createApp()`; `vercel.json` rewrites every path to it). On Railway it runs as a plain `app.listen()` server (`src/index.ts`). Same app either way. | All business logic, all data access, all secrets. Exposes the REST API for every content area, plus Log and contact. Talks to Postgres, Redis, blob storage, and the email provider. Enforces auth and CORS. |
 | **Postgres** | Neon or Supabase | Stores **all owner-editable content**: `content_blocks` (Intro, How I Got Here, Let's Talk links), `projects` + `project_stats` (Built), `toolbox_groups` + `toolbox_items` (Toolbox), and `log_entries` (Log). See §3 for the schema. Accessed only by the backend. |
 | **Redis** | Upstash, accessed via `@upstash/redis` over its **REST API** (stateless HTTP — no TCP client, no connection pool, works on serverless) | (1) Admin **session storage**. (2) **Rate-limit windows** for login/contact. (3) **Short-TTL cache** (30–60s) of each content area's public GET response — the pattern originally built for `GET /api/log`, now used for every content area. Nothing else. Accessed only by the backend. |
 | **Blob storage** | Vercel Blob or Cloudinary | Stores uploaded images — Log entry images and content image fields (Intro hero photo, How I Got Here photo). The DB only ever holds the returned URL string, never bytes. Written only by the backend's upload endpoints. |

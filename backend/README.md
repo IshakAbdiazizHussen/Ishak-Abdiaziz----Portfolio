@@ -1,8 +1,16 @@
 # Portfolio backend
 
 Independent Node.js + Express + TypeScript server. Owns all data access, auth, and
-secrets; exposes a small REST API the frontend calls over HTTPS. Deployed as a
-persistent server (Railway).
+secrets; exposes a small REST API the frontend calls over HTTPS.
+
+**Two run modes, same Express app (`src/app.ts`, `createApp()`):**
+
+- **Local dev** — `src/index.ts` calls `createApp().listen(PORT)` (`npm run dev` / `npm
+start`). A normal long-running server.
+- **Vercel** — `api/index.ts` exports `createApp()` as the default export; `vercel.json`
+  rewrites every path to that one serverless function. An Express app is itself an
+  `(req, res)` handler, so Vercel invokes it directly — no `serverless-http`, no route
+  changes. See "Deployment" below.
 
 The source of truth for this service is `../docs/` — read `architecture.md`,
 `constraints.md`, `project-definition.md`, and `development-plan.md` before changing
@@ -31,7 +39,7 @@ npm run dev               # http://localhost:4000  (starts a throwaway Postgres 
 **Local Redis, two options:**
 
 1. **Simplest** — point `UPSTASH_REDIS_REST_URL/_TOKEN` at an Upstash database. Use a
-   *separate* free database for local so you don't share session/cache state with
+   _separate_ free database for local so you don't share session/cache state with
    production.
 2. **Fully offline / isolated** — run the Upstash-REST-compatible shim in front of a
    local Redis:
@@ -105,10 +113,13 @@ CORS headers.
 ## Layout
 
 ```
+api/
+  index.ts             Vercel entrypoint — exports createApp() as the handler (adapter only)
+vercel.json            rewrites every path -> the api/index function; buildCommand = typecheck
 src/
   config.ts            typed env (the only place process.env is read)
-  app.ts               Express app assembly (testable, no listener)
-  index.ts             listener + graceful shutdown
+  app.ts               Express app assembly (testable, no listener) — used by BOTH run modes
+  index.ts             local dev: createApp().listen() + graceful shutdown
   lib/
     logger.ts          pino, with secret redaction
     db.ts              Postgres client + pingDb()
@@ -126,7 +137,31 @@ db/
 
 ## Deployment (summary — see `../docs/development-plan.md` feature 12)
 
-- Host: Railway, custom domain `api.<shared-domain>`.
-- Release step runs `npm run build` then `npm run migrate:prod`.
-- Start command: `npm start`.
-- All secrets set in Railway project settings; nothing committed.
+**Vercel (current):**
+
+- Vercel project, Root Directory = `backend/`, Framework Preset = **Other**.
+- `vercel.json` (committed) does the work: `buildCommand` = `npm run typecheck` (no
+  `dist/` needed — `@vercel/node` builds `api/index.ts` itself), and one catch-all
+  rewrite sends **every** path to the `api/index` serverless function, which is the
+  whole Express app. `req.url` is preserved, so Express routes `/api/...` and `/health`
+  exactly as it does locally.
+- Set all env vars (see `.env.example`) in the Vercel project. `COOKIE_DOMAIN` unset.
+  `NODE_ENV=production`. `BLOB_READ_WRITE_TOKEN` must be a real token (serverless has no
+  disk). Migrations are **not** part of the deploy — run `npm run migrate` against the
+  production database from your machine (or a one-off CI step) after a schema change.
+- The frontend reaches this via its own `/api/backend/*` same-origin proxy
+  (`BACKEND_URL` = this project's URL) — see `../docs/architecture.md` §13.
+- **Known follow-up:** PDF-preview generation (`pdf-to-img` in `src/lib/pdfThumbnail.ts`)
+  loads its dependency through a runtime `import()` the bundler can't see, so
+  `pdf-to-img` / `@napi-rs/canvas` may be missing from the function bundle. If PDF
+  uploads 5xx on Vercel, add a `functions` block to `vercel.json` with `includeFiles`
+  for those packages (or vendor a static import). Image uploads and every other route
+  are unaffected.
+
+**Railway (alternative — a plain persistent server):**
+
+- `api/index.ts` / `vercel.json` are inert there. Start command `npm start`
+  (`node dist/src/index.js` after `npm run build`), `TRUST_PROXY_HOPS=1`, custom domain
+  optional. Nothing else changes.
+
+All secrets set in the host's project settings; nothing committed.
