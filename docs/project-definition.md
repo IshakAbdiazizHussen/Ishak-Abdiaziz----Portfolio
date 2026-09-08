@@ -10,7 +10,8 @@ As of this revision it is built as a **two-service architecture**:
 ```
 your-portfolio/
   frontend/     independent Next.js (App Router) project — deployed on Vercel
-  backend/      independent Node.js + Express + TypeScript server — deployed on Railway
+  backend/      independent Node.js + Express + TypeScript server — deployed on Vercel
+                (or Railway); the frontend proxies browser calls to it (architecture.md §13)
   docs/         these four planning documents (the source of truth)
 ```
 
@@ -207,9 +208,11 @@ features must fit one of these pages or they do not get built.
   any page's content — including project stats, toolbox entries, Log entries, and the
   Let's Talk contact links — field by field, with images where relevant, and see the
   change appear on the live site.
-- The backend's CORS is locked to the known frontend origins — no wildcard.
+- The backend's CORS is locked to the known frontend origin — no wildcard. (Since the
+  same-origin proxy, `architecture.md` §13, this is defense-in-depth, not load-bearing.)
 - Redis on the backend is used only for sessions and optional short-TTL Log-list
   caching — nothing else.
-- Both services are deployed (frontend on Vercel, backend on Railway) with all secrets
-  in each service's own environment variables.
+- Both services are deployed (frontend on Vercel; backend on Vercel or Railway) with all
+  secrets in each service's own environment variables. The frontend holds only the
+  server-only `BACKEND_URL` and, optionally, `NEXT_PUBLIC_SITE_URL`.
 - All stats on the Built page are real, unrounded, and include the weak numbers.

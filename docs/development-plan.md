@@ -21,6 +21,29 @@ The work is split into two tracks:
   four previously-static public pages over to reading from the backend. Design and
   layout are explicitly **not** part of this track — see constraint C17.
 
+> **Post-1.0 revision — same-origin backend proxy (see §11, §12, `architecture.md` §13,
+> constraint C4b).** After 1–18 were built, the two services were deployed to two
+> separate `*.vercel.app` URLs with no shared parent domain, which breaks a
+> `SameSite=Lax` admin cookie. The fix: the frontend proxies every browser→backend call
+> through **its own origin** (`/api/backend/*`, a `next.config.ts` rewrite to
+> `BACKEND_URL`). This revised, after the fact, several details recorded in the feature
+> blocks below — treat these as the current truth:
+>
+> - The frontend's backend env var is **`BACKEND_URL`** (server-only, **no**
+>   `NEXT_PUBLIC_` prefix). Every mention of `NEXT_PUBLIC_BACKEND_URL` in features 5,
+>   7–11 is pre-revision.
+> - The `sid` cookie is **host-only — no `Domain=` attribute**. `COOKIE_DOMAIN` stays
+>   unset. Mentions of `Domain=.<domain>` / `Domain=.ishak.dev` are pre-revision.
+> - **No shared registrable domain and no Railway are required.** The `ishak.dev` /
+>   `api.ishak.dev` split is one valid *end state*, not a prerequisite; Railway is one
+>   valid backend host, not the only one — §12 below is rewritten for what actually
+>   ships (two `*.vercel.app` projects).
+> - Backend **CORS is now defense-in-depth**, not load-bearing (the browser never calls
+>   it cross-origin). §11's `Origin`-allowlist guidance still applies but nothing breaks
+>   if it's wrong.
+> - The frontend CSP `connect-src` is `'self'` only (no backend origin) — every browser
+>   call is same-origin now.
+
 **Dependency direction:** every frontend feature that does something dynamic depends on
 the matching backend endpoint already existing and working.
 
@@ -219,12 +242,15 @@ fail closed (`503`) if the limiter store is unavailable. No user table, no roles
 third-party identity."
 
 **Security**
-- **Cookie:** `HttpOnly; Secure; SameSite=Lax; Domain=${COOKIE_DOMAIN}; Path=/;
-  Max-Age=<ttl>`. `SameSite=Lax` (not `None`) is correct because the frontend and
-  backend share a registrable domain (`ishak.dev` ↔ `api.ishak.dev`), so admin requests
-  are same-site — see `docs/architecture.md` §5, §9 and constraint C4b. A cross-site
-  `SameSite=None` cookie would be blocked by Safari/ITP and is being removed from
-  Chrome. Locally, leave `Domain` unset so it defaults to `localhost`.
+- **Cookie:** `HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=<ttl>` with **no
+  `Domain=` attribute** (host-only). `SameSite=Lax` (not `None`) is correct because
+  every browser→backend call is same-origin — the frontend proxies it through its own
+  origin (`/api/backend/*`), so the `sid` cookie is first-party. See
+  `docs/architecture.md` §13 and constraint C4b. A cross-site `SameSite=None` cookie
+  would be blocked by Safari/ITP and is being removed from Chrome. `COOKIE_DOMAIN`
+  stays unset (the code still supports it for a future real-shared-domain migration).
+  *(Pre-revision, this said `Domain=${COOKIE_DOMAIN}` with the two services on
+  `ishak.dev` ↔ `api.ishak.dev`.)*
 - The cookie **value is signed** (or the payload encrypted) with `SESSION_SECRET`; a
   tampered `sid` is rejected *before* any Redis call.
 - Constant-time comparison of the submitted password against `ADMIN_PASSWORD`; add a
@@ -281,8 +307,8 @@ third-party identity."
 
 **Quality assurance**
 - Correct password → `200`, `Set-Cookie: sid=...; HttpOnly; Secure; SameSite=Lax;
-  Domain=.<domain>`; a `session:<id>` key exists in Redis with a TTL; the login
-  rate-limit counter for that IP is cleared.
+  Path=/` with **no `Domain=`** (host-only); a `session:<id>` key exists in Redis with a
+  TTL; the login rate-limit counter for that IP is cleared.
 - Wrong password → `401` after a visible delay, no cookie, no Redis session key.
 - `requireAdmin`-protected test route: works with the cookie, `401` without it, `401`
   with a tampered `sid` (rejected before any Redis call), `401` after the Redis key is
@@ -447,6 +473,13 @@ is written to Postgres, Redis, or blob storage."
 
 ## 5. Frontend scaffold
 
+> **Env-var name revised post-1.0 (see the note at the top of this plan).** Everywhere
+> this feature says `NEXT_PUBLIC_BACKEND_URL`, the current name is **`BACKEND_URL`**
+> (server-only, no `NEXT_PUBLIC_` prefix). `lib/env.ts` no longer holds the backend URL
+> at all — `lib/backend.ts` reads `BACKEND_URL` directly in its server branch and the
+> browser branch calls the same-origin `/api/backend/*` proxy. `.env.example` lists
+> `BACKEND_URL=` and `NEXT_PUBLIC_SITE_URL=`. The CSP `connect-src` is `'self'` only.
+
 **Read-first statement**
 Before starting this feature, read `docs/architecture.md`, `docs/constraints.md`,
 `docs/project-definition.md`, and this development plan in full. Do not begin
@@ -524,8 +557,10 @@ page content yet."
 - Add security headers via `next.config` headers or middleware:
   `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`,
   `X-Frame-Options: DENY`, and a `Content-Security-Policy` that allows `self`, the blob
-  storage image host, `NEXT_PUBLIC_BACKEND_URL` in `connect-src`, and the analytics
-  host if used. No `unsafe-inline` scripts.
+  storage image host, `connect-src 'self'` (all browser API calls are same-origin via
+  the proxy — pre-revision this listed `NEXT_PUBLIC_BACKEND_URL`), and the analytics
+  host if used. (The App Router injects an inline hydration `<script>`, so
+  `script-src` keeps `'unsafe-inline'` — see `next.config.ts`.)
 - Self-host fonts via `next/font` — no external font CDN in the CSP.
 
 **Implementation**
@@ -655,8 +690,9 @@ implementation until all four are read.
 Tell the tool: "Build the Let's Talk page in the frontend per `docs/architecture.md`
 §4. The page is a static shell (email, GitHub, LinkedIn links) plus a client
 `ContactForm` (name, email, message, hidden honeypot). On submit it calls the backend:
-`POST {NEXT_PUBLIC_BACKEND_URL}/api/contact` via `lib/backend.ts` with
-`credentials: 'omit'`. Client-side validation is for UX only; the backend is the
+`POST /api/contact` via `lib/backend.ts` (`auth: false` → `credentials: 'omit'`; the
+helper sends it same-origin to `/api/backend/contact`, which Vercel proxies — see the
+top-of-plan note). Client-side validation is for UX only; the backend is the
 authority (constraint C9). Depends on backend feature 4 being live."
 
 **Security**
@@ -707,7 +743,9 @@ implementation until all four are read.
 
 **Prompting**
 Tell the tool: "Build the public `/log` page in the frontend per `docs/architecture.md`
-§7. It fetches entries from `GET {NEXT_PUBLIC_BACKEND_URL}/api/log` (no credentials) —
+§7. It fetches entries from `GET /api/log` via `lib/backend.ts` (no credentials) —
+server-side this resolves to `BACKEND_URL` directly, client-side to the same-origin
+`/api/backend/log` proxy (top-of-plan note) —
 either a Server Component fetch with `cache: 'no-store'` (or a short `revalidate`) or a
 client fetch on mount. Render a reverse-chronological feed: image (`next/image`), title,
 escaped description, formatted date, tags. NO caching layer in the frontend (constraint
@@ -773,8 +811,10 @@ show the Log entry form (image, title, description, date, tags). Submit flow: `P
 (credentials included) to decide whether to show the login form or the entry form. Also
 a logout button calling `/api/admin/logout`. The frontend never sees `ADMIN_PASSWORD` or
 the session cookie (it's `HttpOnly`). All admin calls set `credentials: 'include'`; the
-cookie is same-site (`ishak.dev` ↔ `api.ishak.dev`) so it flows without `SameSite=None`.
-`noindex` on `/admin/*`. Depends on backend features 2 and 3."
+cookie is same-origin (the admin area calls the frontend's own `/api/backend/*` proxy —
+see the top-of-plan note and `architecture.md` §13) so it flows as a first-party
+`SameSite=Lax` cookie without `SameSite=None`. `noindex` on `/admin/*`. Depends on
+backend features 2 and 3."
 
 **Security**
 - Every backend call from the admin area uses `credentials: 'include'` so the `sid`
@@ -838,6 +878,19 @@ cookie is same-site (`ishak.dev` ↔ `api.ishak.dev`) so it flows without `SameS
 ---
 
 ## 11. CORS hardening between the two services
+
+> **PARTIALLY SUPERSEDED by the same-origin proxy revision (see the note at the top of
+> this plan, `architecture.md` §13, constraint C4).** The `cors` middleware still exists
+> and its config is still driven by `CORS_ALLOWED_ORIGINS`, but **CORS is now
+> defense-in-depth, not load-bearing**: the browser reaches the backend only through the
+> frontend's same-origin `/api/backend/*` proxy (or server-to-server during ISR), so no
+> browser request is subject to a CORS check. The app works even if
+> `CORS_ALLOWED_ORIGINS` is wrong. Set it to the real frontend origin anyway. Allowed
+> methods are now `GET, POST, PUT, DELETE, OPTIONS`. Ignore, below: the `ishak.dev`
+> allowlist values, the "reject cross-origin at the CORS layer" framing as a security
+> boundary, the `preview.ishak.dev` alias advice, and `CORS_PREVIEW_ORIGIN_REGEX`
+> (redundant — preview frontends proxy through their own origin too). The original
+> feature record follows for history.
 
 **Read-first statement**
 Before starting this feature, read `docs/architecture.md`, `docs/constraints.md`,
@@ -908,113 +961,145 @@ be added for the non-cookie endpoints — no wildcard."
 
 ## 12. Deployment of both services & launch hardening
 
+> **Rewritten for the same-origin proxy (see the note at the top of this plan,
+> `architecture.md` §13, constraint C4b).** No shared registrable domain, no custom
+> domain, and no Railway are required. Both services can be plain `*.vercel.app`
+> projects; the frontend proxies every browser→backend call through its own origin.
+
 **Read-first statement**
 Before starting this feature, read `docs/architecture.md`, `docs/constraints.md`,
 `docs/project-definition.md`, and this development plan in full. Do not begin
 implementation until all four are read.
 
 **Prompting**
-Tell the tool: "Deploy both services under **one shared registrable domain** (constraint
-C4b, `docs/architecture.md` §9): frontend on `ishak.dev` (+ `www`), backend on
-`api.ishak.dev`. Backend → Railway (persistent server) with its own env vars
-(`DATABASE_URL`, `REDIS_URL`, `ADMIN_PASSWORD`, `SESSION_SECRET`, `SESSION_TTL_SECONDS`,
-`COOKIE_DOMAIN=.ishak.dev`, `TRUST_PROXY_HOPS=1`, `LOG_CACHE_TTL_SECONDS`,
-`RESEND_API_KEY`, blob tokens, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL`,
-`CORS_ALLOWED_ORIGINS=https://ishak.dev,https://www.ishak.dev`). Frontend → Vercel
-(root directory `frontend/`) with `NEXT_PUBLIC_BACKEND_URL=https://api.ishak.dev` and
-`NEXT_PUBLIC_SITE_URL=https://ishak.dev`. Provision production Postgres and Redis. Run
-the migration against production. Verify the whole system against `docs/constraints.md`.
-Set the custom domains first (the cookie flow depends on them), then security headers,
-metadata/OG, sitemap/robots, and privacy-friendly analytics if used."
+Tell the tool: "Deploy the two services. **Frontend → Vercel** (root directory
+`frontend/`, Next.js preset) with server-only `BACKEND_URL=<backend URL>` and
+`NEXT_PUBLIC_SITE_URL=<frontend URL>`; **no** `NEXT_PUBLIC_BACKEND_URL`. **Backend →
+Vercel or Railway** with its own env vars (`DATABASE_URL`, `REDIS_URL`,
+`ADMIN_PASSWORD`, `SESSION_SECRET`, `SESSION_TTL_SECONDS`, `NODE_ENV=production`,
+`TRUST_PROXY_HOPS`, `LOG_CACHE_TTL_SECONDS`, `RESEND_API_KEY`,
+`BLOB_READ_WRITE_TOKEN`, `BLOB_ALLOWED_HOSTS`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL`,
+`CORS_ALLOWED_ORIGINS=<frontend URL>`) — and **`COOKIE_DOMAIN` left unset**. No custom
+domain, no shared parent domain. The frontend's `next.config.ts` `rewrites()` proxies
+`/api/backend/*` → `BACKEND_URL/api/*` server-side, so the admin `sid` cookie is a
+first-party host-only cookie. Provision production Postgres + Redis, run the migration,
+verify against `docs/constraints.md`, then metadata/OG, sitemap/robots, and analytics."
 
 **Security**
-- All backend secrets set in Railway's project settings; none in the repo, none in the
-  frontend, none `NEXT_PUBLIC_`.
+- All backend secrets set in the backend platform's project settings; none in the repo,
+  none in the frontend, none `NEXT_PUBLIC_`. **`BACKEND_URL` is the frontend's only
+  backend config and is server-only** (no `NEXT_PUBLIC_` prefix) — confirm the real
+  backend URL never appears in the browser bundle.
 - `ADMIN_PASSWORD` strong and unique; `SESSION_SECRET` a long random value, different
   per environment.
 - Production Postgres: SSL enforced, least-privilege credentials.
 - Production Redis: password/TLS as the provider supports; not publicly open.
-- Blob storage: public-read only on the `log/` prefix, no listing.
-- `CORS_ALLOWED_ORIGINS` in production contains only the real frontend origin(s) (+ a
-  tight preview rule if chosen) — not `localhost`, not `*`.
-- Cookie in production is `HttpOnly; Secure; SameSite=Lax; Domain=.ishak.dev` and only
-  ever sent over HTTPS; both services are HTTPS-only and on the shared parent domain
-  (constraint C4b). Verify the browser actually stores and re-sends it.
-- `TRUST_PROXY_HOPS` is `1` (Railway), not `true`; confirmed by the IP check below.
+- Blob storage: public-read only on the `log/` and `content/` prefixes, no listing. A
+  real `BLOB_READ_WRITE_TOKEN` is **required in production** — a serverless backend has
+  no persistent filesystem, so the local storage driver is dev-only.
+- `COOKIE_DOMAIN` **unset**. The `sid` cookie is `HttpOnly; Secure; SameSite=Lax;
+  Path=/` with **no `Domain=`** — host-only, and first-party because every browser call
+  arrives via the frontend's own origin (the proxy). Verify the browser stores it on
+  the *frontend's* domain and re-sends it.
+- `CORS_ALLOWED_ORIGINS` = the real frontend origin (defense-in-depth only now — see
+  §11). Not `localhost`, not `*`. `CORS_PREVIEW_ORIGIN_REGEX` unset.
+- `TRUST_PROXY_HOPS` not `true`. The proxy adds one hop for browser-originated requests
+  — verify `req.ip` still resolves to the client, not the frontend edge (see the QA
+  check below); bump the hop count by 1 if not.
 - `/admin/*` confirmed `noindex` and absent from sitemap/robots in production.
-- Confirm security headers (CSP with the real backend + blob hosts, `nosniff`,
-  `Referrer-Policy`, `X-Frame-Options`) are live on the frontend.
+- Frontend security headers live: CSP with `connect-src 'self'` (all browser calls are
+  same-origin now), `img-src` allowing `self` + the blob host, plus `nosniff`,
+  `Referrer-Policy`, `X-Frame-Options`.
 - Rate limiting verified to fail closed in the real environment.
 
 **Implementation**
-1. **Domain first.** Register/confirm `ishak.dev`. Plan the split: `ishak.dev` +
-   `www.ishak.dev` → Vercel; `api.ishak.dev` → Railway. Everything below depends on
-   this because the session cookie is `Domain=.ishak.dev` (constraint C4b).
-2. **Backend on Railway:** create the service from `backend/`, set the start command
-   (`node dist/index.js` after `npm run build`), add all env vars including
-   `COOKIE_DOMAIN=.ishak.dev`, `TRUST_PROXY_HOPS=1`, and
-   `CORS_ALLOWED_ORIGINS=https://ishak.dev,https://www.ishak.dev`. Attach the Railway
-   Redis plugin (or set `REDIS_URL` to Upstash), set `DATABASE_URL` to production
-   Postgres. Add the `api.ishak.dev` custom domain to the Railway service.
-3. Run `npm run migrate` against production Postgres.
-4. Confirm `GET /health` on `https://api.ishak.dev` is green (Postgres + Redis
-   reachable).
-5. **Frontend on Vercel:** create the project with root directory `frontend/`, framework
-   preset Next.js, set `NEXT_PUBLIC_BACKEND_URL=https://api.ishak.dev` and
-   `NEXT_PUBLIC_SITE_URL=https://ishak.dev` for Production. Add the `ishak.dev` +
-   `www.ishak.dev` custom domains to the Vercel project.
-6. End-to-end auth check: from `https://ishak.dev/admin/log`, log in → confirm the
-   browser stores the `sid` cookie for `.ishak.dev` and re-sends it on the next authed
-   call to `https://api.ishak.dev`. If the cookie is dropped, the domain split is wrong
-   — do not proceed.
-7. Redeploy the backend after the domains resolve so `CORS_ALLOWED_ORIGINS` and the
-   cookie domain take effect against the real origins.
-8. Final metadata pass on the frontend: per-page titles/descriptions, a real OG image
+1. **Backend deploy.**
+   - *Vercel:* new project, root `backend/`, build `npm run build`, serverless Node
+     entrypoint. Add all env vars above; **do not set `COOKIE_DOMAIN`**. Note the
+     serverless caveats: cold starts, no persistent FS (Blob token required), and a
+     ~4.5 MB request-body limit (caps large PDF/image uploads).
+   - *Railway (cleaner for a persistent Express server):* service from `backend/`,
+     start `node dist/src/index.js` after `npm run build`, attach Redis, set
+     `DATABASE_URL`, `TRUST_PROXY_HOPS=1`. Same env vars; still **no `COOKIE_DOMAIN`**.
+   - Either way: run `npm run migrate` against production Postgres; confirm
+     `GET /health` on the backend URL is green (Postgres + Redis reachable).
+2. **Frontend deploy on Vercel.** New project, root `frontend/`, Next.js preset. Set:
+   - `BACKEND_URL` = the backend's URL from step 1 (server-only; Production + Preview).
+   - `NEXT_PUBLIC_SITE_URL` = the frontend's own Vercel URL.
+   - Ensure `NEXT_PUBLIC_BACKEND_URL` does **not** exist (the build would still work,
+     but it would be dead config; the browser must not learn the backend URL).
+   The build fails loudly if `BACKEND_URL` is missing (`next.config.ts` `rewrites()`).
+3. **Redeploy the frontend** after `BACKEND_URL` is set so the `/api/backend/*` rewrite
+   and the CSP are built against it.
+4. **End-to-end auth check** on the live frontend URL:
+   - `…/admin` → log in. In DevTools → Network, the login `POST` goes to
+     `…/<frontend>/api/backend/admin/login` — **never** the backend URL directly.
+   - DevTools → Application → Cookies → the frontend origin: `sid` present, **Domain =
+     the frontend host** (host-only), `HttpOnly ✓ Secure ✓ SameSite = Lax`, **no
+     cross-site / SameSite warning**.
+   - Refresh + navigate between admin sections → still logged in. Log out → cookie
+     gone, login screen returns. If the cookie is dropped or flagged cross-site, the
+     proxy or `COOKIE_DOMAIN` is misconfigured — do not proceed.
+5. **Public pages:** `/`, `/built`, `/how-i-got-here`, `/toolbox`, `/log`, `/lets-talk`
+   all load real backend content. Edit a field in `/admin`, wait one ISR window (~30 s),
+   refresh the public page → the change shows. (These fetches are server-side and go to
+   `BACKEND_URL` directly, not through the proxy.)
+6. Final metadata pass on the frontend: per-page titles/descriptions, a real OG image
    (from Intro), favicon, `sitemap.ts`, `robots.ts`.
-9. Add Vercel Analytics (or another privacy-friendly option) on the frontend if desired
+7. Add Vercel Analytics (or another privacy-friendly option) on the frontend if desired
    (constraint C15).
-10. Document every manual setup step in each service's `README.md` so a from-scratch
-    redeploy is reproducible.
-11. Tag `v1.0.0` on both.
+8. Document every manual setup step in each service's `README.md` so a from-scratch
+   redeploy is reproducible. Tag `v1.x` on both.
 
 **Guidelines**
 - Production config lives in the hosting platforms, not in committed files.
 - Clean builds gate both deploys — zero warnings.
-- Keep the two services' env var lists in their respective `.env.example` files current.
+- Keep the two services' env var lists in their respective `.env.example` files current
+  (`BACKEND_URL` on the frontend, no `COOKIE_DOMAIN` on the backend).
 
 **Quality assurance**
 Run this checklist against the live production URLs:
-- All six nav pages load. Intro / Built / How I Got Here / Toolbox are served
-  static/CDN and make **zero** calls to the backend (check the network tab).
-- A backend outage (temporarily stop the Railway service) leaves the four static pages
-  fully working; `/log` and `/lets-talk` degrade gracefully.
+- All six nav pages load with real backend content. A backend outage leaves each page's
+  **layout** working; content falls back to the last good ISR render or an empty/error
+  state; the contact form and `/admin` show a clear error.
+- Every browser API call goes to `…/<frontend>/api/backend/*` (same-origin). Nothing in
+  the Network tab hits the backend URL directly except server-rendered ISR (not visible
+  to the browser). No CORS preflight (`OPTIONS`) fires for the admin calls.
 - Contact form: a real submission delivers an email with a working reply-to; invalid
   and honeypot submissions behave correctly; rate limiting triggers and fails closed.
-- Admin: login with the production password works; wrong password fails; logout works;
-  session persists across reloads; the session TTL slides forward on activity;
+- Admin: production password works; wrong password fails; logout works; session
+  persists across reloads and section navigation; the TTL slides forward on activity;
   `/admin/*` is `noindex` and not in `/sitemap.xml`.
-- Admin login works in **Safari** and a Chrome profile with third-party cookies blocked
-  — proves the same-site `Domain=.ishak.dev` cookie is not being treated as
-  third-party.
-- `req.ip` in backend logs shows real client IPs (trust proxy pinned); the login and
-  contact rate limits actually throttle per client and return `503` when Redis is down.
-- Add a real Log entry with an image in production → it appears on `/log`; the image
-  loads optimized; `<script>` in the description renders inert.
+- Admin login works in **Safari** and in a Chrome profile with third-party cookies
+  **blocked** — this now *passes* because the `sid` cookie is first-party to the
+  frontend origin (the whole point of the proxy).
+- `req.ip` in backend logs shows real client IPs, not the frontend edge's — the login
+  and (especially) contact rate limits throttle per client and return `503` when Redis
+  is down. If `req.ip` is a proxy address, raise `TRUST_PROXY_HOPS` by 1.
+- Add a real Log entry with an image/PDF in production → it appears on `/log`; a PDF
+  shows its rendered first page; `<script>` in the description renders inert.
 - `GET /api/log` is served from the Redis cache on repeat calls within the TTL; adding
-  an entry invalidates it immediately.
-- Simulate Redis down in production briefly: `/log` still works (fail open); admin login
-  fails closed.
-- CORS: requests from the real frontend origin succeed; a curl with a foreign `Origin`
-  gets no allow-origin header; no `*` anywhere.
+  or editing an entry invalidates it immediately.
+- Simulate Redis down in production briefly: content pages still work (fail open); admin
+  login fails closed.
 - View source / bundle inspection on the frontend: no secret, no `ADMIN_PASSWORD`, no
-  `DATABASE_URL`, no `REDIS_URL`, no API keys, no session token in storage.
-- Repo-wide grep: no DB/Redis/email/blob client in `frontend/`; no Next.js API routes
-  anywhere; Redis in `backend/` used only for `session:*` and `cache:log:list`.
-- `curl -I` on the frontend shows the expected security headers; CSP `connect-src`
-  includes the backend origin.
-- Lighthouse (production): performance, accessibility, best-practices, SEO all strong;
-  static pages ≥ 95 performance.
+  `DATABASE_URL`, no `REDIS_URL`, no API keys, **no backend URL**, no session token in
+  storage.
+- Repo-wide grep: no DB/Redis/email/blob client in `frontend/`; **no `app/api/` route
+  handlers** (the proxy is a `next.config.ts` rewrite, not a Route Handler); Redis in
+  `backend/` used only for `session:*` and the `cache:*` keys.
+- `curl -I` on the frontend shows the expected security headers; CSP `connect-src` is
+  `'self'` (no backend origin).
+- Lighthouse (production): performance, accessibility, best-practices, SEO all strong.
 - Every "Live demo" / source link on Built resolves; 404 and error pages are styled.
+
+**Future: a real shared parent domain (optional cleanup, not required).** If a custom
+domain is bought later — `yourdomain.com` (+ `www`) → the frontend, `api.yourdomain.com`
+→ the backend — requests become same-site directly, the cookie can move to
+`SameSite=Lax; Domain=.yourdomain.com` (`COOKIE_DOMAIN=.yourdomain.com`), and the
+`/api/backend/*` rewrite can be deleted in favour of a public `NEXT_PUBLIC_BACKEND_URL`
+and a real CORS allowlist. The proxy is a complete solution at zero cost, so this is a
+"nice to have", not a milestone.
 
 ---
 
@@ -1564,8 +1649,9 @@ change — only the data source does."
 - Handle backend/DB failure per page: fall back to the last successfully rendered ISR
   output where one exists (per `docs/architecture.md` §4's failure-mode note), or a
   clean error/empty state — never a stack trace, never a blank page.
-- No secrets involved; `NEXT_PUBLIC_BACKEND_URL` is the only config, already present
-  from feature 5.
+- No secrets involved; `BACKEND_URL` (server-only — see the top-of-plan note; was
+  `NEXT_PUBLIC_BACKEND_URL`) is the only config, already present from feature 5. These
+  fetches run server-side (ISR), so they call `BACKEND_URL` directly, not the proxy.
 
 **Implementation**
 1. `lib/content.ts` (frontend) — `fetchIntro()`, `fetchProjects()`,
