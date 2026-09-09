@@ -25,7 +25,7 @@ export function HeroPortrait({ src = DEFAULT_SRC }: { src?: string } = {}) {
           width={440}
           height={566}
           priority
-          sizes="(max-width: 86rem) 90vw, 40rem"
+          sizes="(max-width: 82rem) 90vw, 32rem"
           className={styles.photo}
         />
       </div>

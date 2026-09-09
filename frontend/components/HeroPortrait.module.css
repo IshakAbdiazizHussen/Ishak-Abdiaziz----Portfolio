@@ -1,7 +1,7 @@
 .wrap {
   margin: 0;
   width: 100%;
-  max-width: 40rem;
+  max-width: 32rem;
 }
 
 /* No frame, border, or crop-mark — the photo sits directly on the page so it
