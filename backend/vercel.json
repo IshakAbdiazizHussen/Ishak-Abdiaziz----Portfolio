@@ -1,5 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run typecheck",
+  "functions": {
+    "api/index.ts": {
+      "includeFiles": "node_modules/{pdf-to-img,pdfjs-dist,@napi-rs}/**"
+    }
+  },
   "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
 }

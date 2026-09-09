@@ -151,12 +151,13 @@ db/
   production database from your machine (or a one-off CI step) after a schema change.
 - The frontend reaches this via its own `/api/backend/*` same-origin proxy
   (`BACKEND_URL` = this project's URL) — see `../docs/architecture.md` §13.
-- **Known follow-up:** PDF-preview generation (`pdf-to-img` in `src/lib/pdfThumbnail.ts`)
-  loads its dependency through a runtime `import()` the bundler can't see, so
-  `pdf-to-img` / `@napi-rs/canvas` may be missing from the function bundle. If PDF
-  uploads 5xx on Vercel, add a `functions` block to `vercel.json` with `includeFiles`
-  for those packages (or vendor a static import). Image uploads and every other route
-  are unaffected.
+- **PDF previews.** `pdf-to-img` (in `src/lib/pdfThumbnail.ts`) is loaded through a
+  runtime `import()` that Vercel's bundler can't trace, so `vercel.json` has a
+  `functions.includeFiles` glob (`pdf-to-img`, `pdfjs-dist`, `@napi-rs`) to force those
+  packages into the deployed function. If a PDF still fails to render on Vercel, the
+  upload route now **degrades gracefully** — it stores the PDF without a first-page
+  preview and the Log card shows its "PDF ↗" tile. Image uploads and every other route
+  are unaffected either way.
 
 **Railway (alternative — a plain persistent server):**
 

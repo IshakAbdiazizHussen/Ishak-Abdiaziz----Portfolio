@@ -8,6 +8,7 @@ import { MAX_LOG_UPLOAD_BYTES, validateLogUpload } from "../lib/uploadValidation
 import { uploadImage, uploadLogPdf, deleteLogObjects } from "../lib/storage";
 import { renderPdfFirstPage } from "../lib/pdfThumbnail";
 import { badRequest, notFound } from "../lib/errors";
+import { logger } from "../lib/logger";
 
 function isUuid(value: string | undefined): value is string {
   return !!value && uuidParam.safeParse(value).success;
@@ -132,7 +133,10 @@ logRouter.delete("/:id", requireAdmin, async (req, res, next) => {
  *
  * For a PDF, the first page is rendered to a PNG and stored alongside it
  * (`<id>.pdf` + `<id>.png`), so the public Log can show the page image; the
- * preview URL is just the PDF URL with `.pdf` → `.png`.
+ * preview URL is just the PDF URL with `.pdf` → `.png`. If that render fails
+ * (e.g. the renderer isn't available in the deployment bundle), the PDF is
+ * still stored — just without a preview sibling — and the Log card falls back
+ * to its "PDF ↗" tile. A preview problem must not block adding an entry.
  */
 logRouter.post("/upload", requireAdmin, upload.single("image"), async (req, res, next) => {
   try {
@@ -147,8 +151,15 @@ logRouter.post("/upload", requireAdmin, upload.single("image"), async (req, res,
     if (!result.ok) throw badRequest(result.error);
 
     if (result.contentType === "application/pdf") {
-      const preview = await renderPdfFirstPage(file.buffer);
-      const { url } = await uploadLogPdf(file.buffer, preview);
+      let preview: Buffer | null = null;
+      try {
+        preview = await renderPdfFirstPage(file.buffer);
+      } catch (err) {
+        logger.warn({ err }, "PDF preview render failed — storing the PDF without a preview");
+      }
+      const { url } = preview
+        ? await uploadLogPdf(file.buffer, preview)
+        : await uploadImage(file.buffer, "pdf", "application/pdf");
       res.status(200).json({ imageUrl: url });
       return;
     }
