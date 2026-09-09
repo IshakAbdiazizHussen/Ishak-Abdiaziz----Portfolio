@@ -1,16 +1,18 @@
 .hero {
-  max-width: 82rem;
+  max-width: 70rem;
   margin-inline: auto;
   padding: var(--space-2xl) var(--page-pad) var(--space-xl);
 
   display: grid;
-  /* Copy column wide enough for the full-size headline; portrait column ~31rem
-     for the tightly-cropped photo. `.media` must stay `justify-self: stretch`
-     (the default) — a non-stretch value shrink-wraps the grid item to the
-     image's raw pixel width and the 31rem track / `.wrap` max-width stop
-     applying. */
-  grid-template-columns: minmax(0, 40rem) minmax(0, 31rem);
+  /* Copy keeps its full 40rem; the portrait is a flexible track capped at
+     20.5rem (328px) — at or below the source file's native 334px, so it is
+     never upscaled — which lands near a third of the hero's width on desktop.
+     `.media` must stay `justify-self: stretch` (the default): a non-stretch
+     value shrink-wraps the grid item to the image's raw pixel width and the
+     track / `.wrap` max-width stop applying. */
+  grid-template-columns: minmax(0, 40rem) minmax(0, 20.5rem);
   gap: var(--space-xl);
+  justify-content: center;
   align-items: center;
 }
 
@@ -132,7 +134,7 @@
 
 /* Below the point where both columns fit at full size, stack them — the copy
    goes back to full width so the headline is never squeezed. */
-@media (max-width: 82rem) {
+@media (max-width: 70rem) {
   .hero {
     grid-template-columns: 1fr;
     gap: var(--space-xl);

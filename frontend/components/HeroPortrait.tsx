@@ -8,14 +8,15 @@ const DEFAULT_SRC = "/hero-portrait.png";
  * `src` comes from the backend (feature 18) once the owner uploads a real
  * hero photo via the admin panel; until then `heroPhotoUrl` is empty and
  * `Hero.tsx` passes `undefined`, so this falls back to the local
- * `public/hero-portrait.png` (334×462) — a head-and-shoulders crop of the
- * background-removed source with its transparent side margins trimmed off, so
- * the subject fills the frame and reads large without upscaling more than
- * necessary from the 440px-wide source. The `width`/`height` here only set the
- * intrinsic aspect ratio for CLS; `.photo { width: 100%; height: auto }` does
- * the actual sizing, so an admin-uploaded photo of a different aspect ratio
- * scales to fit rather than stretching or cropping. The photo sits directly on
- * the page — no frame, border, or crop-mark.
+ * `public/hero-portrait.png` (334×462 native) — a head-and-shoulders crop of
+ * the background-removed source with its transparent side margins trimmed off,
+ * so the subject fills the frame. It renders at up to 20.5rem (328px) wide —
+ * see `.wrap` / the `.hero` grid — which stays at or below the native 334px, so
+ * it is never upscaled. The `width`/`height` here only set the intrinsic aspect
+ * ratio for CLS; `.photo { width: 100%; height: auto }` does the actual sizing,
+ * so an admin-uploaded photo of a different aspect ratio scales to fit rather
+ * than stretching or cropping. The photo sits directly on the page — no frame,
+ * border, or crop-mark.
  */
 export function HeroPortrait({ src = DEFAULT_SRC }: { src?: string } = {}) {
   return (
@@ -27,7 +28,7 @@ export function HeroPortrait({ src = DEFAULT_SRC }: { src?: string } = {}) {
           width={334}
           height={462}
           priority
-          sizes="(max-width: 82rem) 90vw, 31rem"
+          sizes="(max-width: 70rem) 90vw, 20.5rem"
           className={styles.photo}
         />
       </div>

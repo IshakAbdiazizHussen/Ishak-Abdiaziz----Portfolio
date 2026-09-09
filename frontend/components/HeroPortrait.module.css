@@ -1,7 +1,10 @@
 .wrap {
   margin: 0;
   width: 100%;
-  max-width: 31rem;
+  /* Cap at 20.5rem (328px) — below the source's native 334px, so the photo is
+     never upscaled. `width: 100%` fills the grid track (which is `stretch`),
+     shrinking with it on smaller screens. */
+  max-width: 20.5rem;
 }
 
 /* No frame, border, or crop-mark — the photo sits directly on the page so it
