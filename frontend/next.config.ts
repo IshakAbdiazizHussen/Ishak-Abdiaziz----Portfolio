@@ -24,10 +24,23 @@ const backendUrl = (process.env.BACKEND_URL ?? "").replace(/\/+$/, "");
  *
  * `connect-src` is just `'self'` now: every browser call to the backend goes
  * through the same-origin `/api/backend/*` rewrite, so there is no cross-origin
- * XHR to allow. `img-src` still lists the backend origin for the local storage
- * driver's `/uploads/...` image URLs in development (production images are on
- * Vercel Blob). In dev only, `'unsafe-eval'` and `ws:`/`wss:` are added for
- * Turbopack HMR.
+ * XHR to allow.
+ *
+ * `img-src` allowlist (must stay in sync with `images.remotePatterns` below):
+ *   - `'self'` / `data:` — same-origin assets, `next/image` optimized output
+ *     (served from `/_next/image`), inline SVG data URIs.
+ *   - `https://*.public.blob.vercel-storage.com` — the Vercel Blob **public**
+ *     URL format: `https://<storeId>.public.blob.vercel-storage.com/<path>`.
+ *     This is where production Log images and content photos live. The
+ *     `.public.` label matters — that is the exact host Vercel Blob serves
+ *     from.
+ *   - `https://*.blob.vercel-storage.com` — the parent domain, kept as a
+ *     belt-and-braces match in case Vercel ever changes the subdomain shape.
+ *   - `${backendUrl}` — only for the LOCAL storage driver's `/uploads/...`
+ *     image URLs (development, or a self-hosted backend with no Blob token).
+ *     Never used when a real `BLOB_READ_WRITE_TOKEN` is set.
+ *
+ * In dev only, `'unsafe-eval'` and `ws:`/`wss:` are added for Turbopack HMR.
  */
 function buildCsp(isDev: boolean): string {
   return [
@@ -36,7 +49,7 @@ function buildCsp(isDev: boolean): string {
     "form-action 'self'",
     "frame-ancestors 'none'",
     "object-src 'none'",
-    `img-src 'self' data: https://*.blob.vercel-storage.com ${backendUrl}`.trim(),
+    `img-src 'self' data: https://*.public.blob.vercel-storage.com https://*.blob.vercel-storage.com ${backendUrl}`.trim(),
     "font-src 'self'",
     "style-src 'self' 'unsafe-inline'",
     `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
