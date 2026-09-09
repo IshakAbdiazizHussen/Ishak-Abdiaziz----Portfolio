@@ -12,13 +12,13 @@ const DEFAULT_SRC = "/Portfolio-removebg-preview.png";
  * `width`/`height` here only set the intrinsic aspect ratio for CLS;
  * `.photo { width: 100%; height: auto }` does the actual sizing, so an
  * admin-uploaded photo of a different aspect ratio scales to fit rather than
- * stretching or cropping.
+ * stretching or cropping. The photo sits directly on the page — no frame,
+ * border, or crop-mark — so it reads at full size.
  */
 export function HeroPortrait({ src = DEFAULT_SRC }: { src?: string } = {}) {
   return (
     <div className={styles.wrap}>
       <div className={styles.frame}>
-        <span className={styles.corner} aria-hidden="true" />
         <Image
           src={src}
           alt="Ishak Abdiaziz"
