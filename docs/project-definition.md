@@ -180,7 +180,7 @@ features must fit one of these pages or they do not get built.
 | **Built** | The two featured projects, each as hook → what it does → one hard technical decision as a story → real stats → live demo link. |
 | **How I Got Here** | A short, human background story — how the author got into this work. Not a full resume. |
 | **Toolbox** | A short, honest, grouped list of technologies actually used (Frontend / Backend / AI-ML / Infra). No inflated logo wall. |
-| **Log** | A reverse-chronological milestone feed (image, title, short description, date), added by the single owner via a password-gated admin form. |
+| **Log** | Milestone entries (image, title, short description, date), added by the single owner via a password-gated admin form, shown in three columns — Learned, Shipped, Working on — each newest-first. |
 | **Let's Talk** | Contact: email, GitHub, LinkedIn, and a minimal contact form (name, email, message). |
 
 ## Design direction

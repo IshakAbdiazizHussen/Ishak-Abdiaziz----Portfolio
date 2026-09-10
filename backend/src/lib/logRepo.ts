@@ -1,5 +1,5 @@
 import { sql } from "./db";
-import type { LogEntry, NewLogEntry } from "./types";
+import type { LogCategory, LogEntry, NewLogEntry } from "./types";
 
 /**
  * All Log SQL lives here. Queries are parameterized (postgres.js tagged
@@ -13,6 +13,7 @@ interface Row {
   date: string; // to_char(...) -> text
   image_url: string;
   tags: string[] | null;
+  category: LogCategory;
   created_at: Date | string;
 }
 
@@ -24,6 +25,7 @@ function toEntry(row: Row): LogEntry {
     date: row.date,
     imageUrl: row.image_url,
     tags: row.tags ?? [],
+    category: row.category,
     createdAt:
       row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
   };
@@ -33,7 +35,7 @@ export async function listEntries(): Promise<LogEntry[]> {
   const rows = await sql<Row[]>`
     select id, title, description,
            to_char(date, 'YYYY-MM-DD') as date,
-           image_url, tags, created_at
+           image_url, tags, category, created_at
     from log_entries
     order by date desc, created_at desc
   `;
@@ -42,17 +44,18 @@ export async function listEntries(): Promise<LogEntry[]> {
 
 export async function createEntry(input: NewLogEntry): Promise<LogEntry> {
   const rows = await sql<Row[]>`
-    insert into log_entries (title, description, date, image_url, tags)
+    insert into log_entries (title, description, date, image_url, tags, category)
     values (
       ${input.title},
       ${input.description},
       ${input.date}::date,
       ${input.imageUrl},
-      ${input.tags}
+      ${input.tags},
+      ${input.category}
     )
     returning id, title, description,
               to_char(date, 'YYYY-MM-DD') as date,
-              image_url, tags, created_at
+              image_url, tags, category, created_at
   `;
   const row = rows[0];
   if (!row) throw new Error("insert returned no row");
@@ -63,7 +66,7 @@ export async function getEntry(id: string): Promise<LogEntry | null> {
   const rows = await sql<Row[]>`
     select id, title, description,
            to_char(date, 'YYYY-MM-DD') as date,
-           image_url, tags, created_at
+           image_url, tags, category, created_at
     from log_entries
     where id = ${id}
   `;
@@ -78,11 +81,12 @@ export async function updateEntry(id: string, input: NewLogEntry): Promise<LogEn
       description = ${input.description},
       date = ${input.date}::date,
       image_url = ${input.imageUrl},
-      tags = ${input.tags}
+      tags = ${input.tags},
+      category = ${input.category}
     where id = ${id}
     returning id, title, description,
               to_char(date, 'YYYY-MM-DD') as date,
-              image_url, tags, created_at
+              image_url, tags, category, created_at
   `;
   return rows[0] ? toEntry(rows[0]) : null;
 }

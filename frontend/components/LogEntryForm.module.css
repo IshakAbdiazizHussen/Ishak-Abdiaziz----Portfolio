@@ -51,7 +51,8 @@
 }
 
 .field input,
-.field textarea {
+.field textarea,
+.field select {
   width: 100%;
   padding: var(--space-2xs) var(--space-xs);
   font-family: var(--font-sans-stack);
@@ -60,6 +61,22 @@
   background: var(--bg-inset);
   border: var(--border-width) solid var(--border-strong);
   border-radius: var(--radius);
+}
+
+/* Native select with the app's own chevron so it matches the inputs. */
+.field select {
+  appearance: none;
+  padding-right: var(--space-lg);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(135deg, var(--text-dim) 50%, transparent 50%);
+  background-position:
+    calc(100% - 1rem) center,
+    calc(100% - 0.7rem) center;
+  background-size:
+    0.3rem 0.3rem,
+    0.3rem 0.3rem;
+  background-repeat: no-repeat;
 }
 
 .field input[type="file"] {
@@ -74,14 +91,16 @@
 }
 
 .field input:focus-visible,
-.field textarea:focus-visible {
+.field textarea:focus-visible,
+.field select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
   border-color: var(--accent);
 }
 
 .field input[aria-invalid="true"],
-.field textarea[aria-invalid="true"] {
+.field textarea[aria-invalid="true"],
+.field select[aria-invalid="true"] {
   border-color: var(--danger);
 }
 

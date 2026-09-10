@@ -1,0 +1,70 @@
+/* Wider than the page column so three card columns have room (same escape
+   hatch the Toolbox groups use). */
+.wrap {
+  max-width: 82rem;
+  margin-inline: auto;
+  padding-inline: var(--page-pad);
+}
+
+/* Three independent columns. `align-items: start` so a short column (e.g.
+   "Shipped" with one entry) does not stretch to match a long one — the task
+   allows unequal heights. Separation is the gap plus each column's own
+   heading rule; no boxed panel, matching the site's mostly-hairline design. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-xl);
+  align-items: start;
+}
+
+/* Monospace label — same role/scale as the Toolbox group names. The bottom
+   rule is the "content divider" the heading reads as. */
+.heading {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2xs);
+  margin: 0 0 var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: var(--border-width) solid var(--border-strong);
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-warm);
+}
+
+.count {
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.empty {
+  margin: 0;
+  font-family: var(--font-mono-stack);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--text-faint);
+}
+
+/* Tablet / mobile: three full-width stacked sections, same order. A top rule
+   separates them the way the card list already separates its entries. */
+@media (max-width: 64rem) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .column + .column {
+    margin-top: var(--space-xl);
+    padding-top: var(--space-xl);
+    border-top: var(--border-width) solid var(--border);
+  }
+}

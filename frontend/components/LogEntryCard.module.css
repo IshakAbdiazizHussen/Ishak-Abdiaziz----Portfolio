@@ -7,6 +7,23 @@
   border-top: var(--border-width) solid var(--border);
 }
 
+/* Inside a Log column: image on top, text below, always (see LogEntryCard). */
+.cardColumn {
+  grid-template-columns: 1fr;
+  gap: var(--space-md);
+  padding-block: var(--space-md);
+}
+
+.cardColumn:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.cardColumn .head {
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
 .media {
   position: relative;
   aspect-ratio: 3 / 2;
@@ -80,7 +97,9 @@
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   border: var(--border-width) solid var(--border);
   backdrop-filter: blur(2px);
-  transition: color 120ms ease, border-color 120ms ease;
+  transition:
+    color 120ms ease,
+    border-color 120ms ease;
 }
 
 .pdf:hover .pdfBadge,

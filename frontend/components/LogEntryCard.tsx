@@ -8,11 +8,25 @@ import styles from "./LogEntryCard.module.css";
 /**
  * Presentational. `entry.description` is rendered as plain text by React's
  * default escaping — never as HTML (constraint C9).
+ *
+ * `variant="column"` is the layout used inside the Log page's three grouped
+ * columns: image on top, text below, always — the columns are narrower than
+ * any viewport breakpoint so the side-by-side `"feed"` layout can't be used.
  */
-export function LogEntryCard({ entry }: { entry: LogEntry }) {
+export function LogEntryCard({
+  entry,
+  variant = "feed",
+}: {
+  entry: LogEntry;
+  variant?: "feed" | "column";
+}) {
   return (
     <Reveal>
-      <article className={styles.card}>
+      <article
+        className={[styles.card, variant === "column" ? styles.cardColumn : ""]
+          .filter(Boolean)
+          .join(" ")}
+      >
         <div className={styles.media}>
           {!isStoredAttachment(entry.imageUrl) ? (
             <span className={styles.placeholder}>Image</span>

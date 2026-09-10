@@ -3,6 +3,16 @@
  * `GET /api/log` (as `{ entries: LogEntry[] }`) and echoed by `POST /api/log`
  * (as `{ entry: LogEntry }`). The frontend depends on this contract.
  */
+
+/**
+ * Which of the public Log page's three columns an entry belongs in.
+ * `'working'` is the column titled "Working on". Enforced by a CHECK
+ * constraint on `log_entries.category` and by `newLogEntrySchema`.
+ */
+export type LogCategory = "learned" | "shipped" | "working";
+
+export const LOG_CATEGORIES: readonly LogCategory[] = ["learned", "shipped", "working"];
+
 export interface LogEntry {
   id: string;
   title: string;
@@ -11,6 +21,7 @@ export interface LogEntry {
   date: string;
   imageUrl: string;
   tags: string[];
+  category: LogCategory;
   /** ISO 8601 timestamp. */
   createdAt: string;
 }
@@ -21,6 +32,7 @@ export interface NewLogEntry {
   date: string;
   imageUrl: string;
   tags: string[];
+  category: LogCategory;
 }
 
 /**

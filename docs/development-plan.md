@@ -180,7 +180,10 @@ dependencies minimal (constraint C16)."
    );
    CREATE INDEX log_entries_feed_idx ON log_entries (date DESC, created_at DESC);
    ```
-   Provide a `npm run migrate` script that applies `db/*.sql` in order.
+   Provide a `npm run migrate` script that applies `db/*.sql` in order. Later migrations
+   extend this table: `005_log_category.sql` adds `category text NOT NULL CHECK (category
+   IN ('learned','shipped','working'))` (backfilled `'learned'`, default then dropped) —
+   it drives the public Log page's three columns.
 7. `src/app.ts` — build the Express app: `app.set('trust proxy', config.TRUST_PROXY_HOPS)`,
    `helmet`, JSON body limit, request logging, a `GET /health` returning `{ ok: true }`
    on success or `503` with `{ ok: false, postgres, redis }` when a ping fails, a
@@ -749,9 +752,15 @@ Tell the tool: "Build the public `/log` page in the frontend per `docs/architect
 server-side this resolves to `BACKEND_URL` directly, client-side to the same-origin
 `/api/backend/log` proxy (top-of-plan note) —
 either a Server Component fetch with `cache: 'no-store'` (or a short `revalidate`) or a
-client fetch on mount. Render a reverse-chronological feed: image (`next/image`), title,
-escaped description, formatted date, tags. NO caching layer in the frontend (constraint
-C2) — the backend owns the short-TTL cache. Depends on backend feature 3."
+client fetch on mount. Render each entry as a card: image (`next/image`), title, escaped
+description, formatted date, tags. NO caching layer in the frontend (constraint C2) — the
+backend owns the short-TTL cache. Depends on backend feature 3."
+
+> **Later change:** the feed was restructured into three columns — Learned | Shipped |
+> Working on (`log_entries.category`, migration `005`; `components/LogColumns.tsx`). The
+> backend still returns all entries newest-first from `GET /api/log`; the page groups
+> them by category, each column newest-first, and collapses to three stacked full-width
+> sections below `64rem`.
 
 **Security**
 - Output-escape all entry text; never `dangerouslySetInnerHTML`. The backend returns

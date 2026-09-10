@@ -12,7 +12,7 @@ import {
 import { BackendError } from "@/lib/backend";
 import { createEntry, NotAuthenticatedError, updateEntry, uploadLogFile } from "@/lib/admin";
 import { fetchLogEntries } from "@/lib/log";
-import type { LogEntry } from "@/lib/types";
+import type { LogCategory, LogEntry } from "@/lib/types";
 import { LogAdminList } from "./LogAdminList";
 import { thumbFor } from "./log-attachment";
 import styles from "./LogEntryForm.module.css";
@@ -22,6 +22,13 @@ const ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
 const PDF_TYPE = "application/pdf";
 const TAG_RE = /^[a-z0-9][a-z0-9-]{0,29}$/;
 
+/** The three public Log columns, in display order. Value → visible label. */
+const CATEGORY_OPTIONS: ReadonlyArray<{ value: LogCategory; label: string }> = [
+  { value: "learned", label: "Learned" },
+  { value: "shipped", label: "Shipped" },
+  { value: "working", label: "Working on" },
+];
+
 type Status = "idle" | "working" | "done" | "error";
 
 interface Errors {
@@ -30,6 +37,7 @@ interface Errors {
   description?: string;
   date?: string;
   tags?: string;
+  category?: string;
 }
 
 function todayISO(): string {
@@ -53,6 +61,8 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(todayISO());
   const [tagsRaw, setTagsRaw] = useState("");
+  // "" = nothing picked yet — a required choice, never submitted as a default.
+  const [category, setCategory] = useState<LogCategory | "">("");
 
   // Edit mode: the entry being edited, its current attachment, and whether the
   // user asked to clear that attachment.
@@ -102,6 +112,7 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
     setDescription("");
     setDate(todayISO());
     setTagsRaw("");
+    setCategory("");
     setEditingId(null);
     setKeptImageUrl("");
     setRemoveAttachment(false);
@@ -115,6 +126,7 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
     setDescription(entry.description);
     setDate(entry.date);
     setTagsRaw(entry.tags.join(", "));
+    setCategory(entry.category);
     setKeptImageUrl(entry.imageUrl);
     setRemoveAttachment(false);
     setErrors({});
@@ -155,6 +167,8 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) next.date = "Use YYYY-MM-DD.";
     else if (Date.parse(`${date}T00:00:00Z`) > Date.now() + 36 * 3600 * 1000)
       next.date = "That date is in the future.";
+
+    if (!category) next.category = "Pick a column.";
 
     const tags = parseTags(tagsRaw);
     if (tags.length > 8) next.tags = "At most 8 tags.";
@@ -202,6 +216,8 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
       date,
       imageUrl,
       tags: parseTags(tagsRaw),
+      // `validate()` already rejected "" above, so this is a real LogCategory.
+      category: category as LogCategory,
     };
 
     setMessage(editingId ? "Saving changes…" : "Saving entry…");
@@ -242,7 +258,9 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
           <legend className={styles.legend}>{editing ? "Edit entry" : "New entry"}</legend>
 
           <div className={styles.field}>
-            <label htmlFor={`${uid}-image`}>{editing ? "Replace image or PDF" : "Image or PDF"}</label>
+            <label htmlFor={`${uid}-image`}>
+              {editing ? "Replace image or PDF" : "Image or PDF"}
+            </label>
             <input
               id={`${uid}-image`}
               type="file"
@@ -324,6 +342,34 @@ export function LogEntryForm({ onSessionExpired }: { onSessionExpired: () => voi
             {errors.description ? (
               <p id={`${uid}-desc-err`} className={styles.error}>
                 {errors.description}
+              </p>
+            ) : null}
+          </div>
+
+          <div className={styles.field}>
+            <label htmlFor={`${uid}-category`}>Column</label>
+            <select
+              id={`${uid}-category`}
+              value={category}
+              onChange={(e) => setCategory(e.target.value as LogCategory | "")}
+              aria-invalid={errors.category ? true : undefined}
+              aria-describedby={errors.category ? `${uid}-category-err` : `${uid}-category-hint`}
+            >
+              <option value="" disabled>
+                Choose one…
+              </option>
+              {CATEGORY_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <p id={`${uid}-category-hint`} className={styles.hint}>
+              Which column this entry appears under on the public Log.
+            </p>
+            {errors.category ? (
+              <p id={`${uid}-category-err`} className={styles.error}>
+                {errors.category}
               </p>
             ) : null}
           </div>

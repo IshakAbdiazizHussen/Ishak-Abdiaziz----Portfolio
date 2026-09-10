@@ -3,6 +3,7 @@ import type {
   IntroContent,
   HowIGotHereContent,
   LetsTalkContent,
+  LogCategory,
   LogEntry,
   Project,
   ProjectStat,
@@ -100,6 +101,8 @@ export interface NewEntryInput {
   date: string;
   imageUrl: string;
   tags: string[];
+  /** Required — the backend rejects a missing/unknown value with 400. */
+  category: LogCategory;
 }
 
 /**
@@ -357,15 +360,12 @@ export async function createToolboxItem(
   input: NewToolboxItemInput,
 ): Promise<ToolboxItem> {
   try {
-    const res = await backendFetch<{ item: ToolboxItem }>(
-      `/api/toolbox/groups/${groupId}/items`,
-      {
-        auth: true,
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      },
-    );
+    const res = await backendFetch<{ item: ToolboxItem }>(`/api/toolbox/groups/${groupId}/items`, {
+      auth: true,
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
     return res.item;
   } catch (err) {
     mapAuthed(err);

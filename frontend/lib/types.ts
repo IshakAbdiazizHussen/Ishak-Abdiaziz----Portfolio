@@ -5,6 +5,14 @@
  * (`backend/src/lib/types.ts`). Kept in sync by hand — if the backend shape
  * changes, change it here too.
  */
+
+/**
+ * Which of the public Log page's three columns an entry belongs in.
+ * `"working"` is the column titled "Working on". Mirrors the backend's
+ * `LogCategory` and the `log_entries.category` CHECK constraint.
+ */
+export type LogCategory = "learned" | "shipped" | "working";
+
 export interface LogEntry {
   id: string;
   title: string;
@@ -13,6 +21,7 @@ export interface LogEntry {
   date: string;
   imageUrl: string;
   tags: string[];
+  category: LogCategory;
   /** ISO 8601 timestamp. */
   createdAt: string;
 }

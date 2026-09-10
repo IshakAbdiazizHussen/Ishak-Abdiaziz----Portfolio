@@ -32,6 +32,15 @@ const tag = z
   .regex(/^[a-z0-9][a-z0-9-]{0,29}$/, "tags must be short slugs");
 
 /**
+ * Which public Log column the entry belongs in. REQUIRED — no `.default()`:
+ * a missing or unrecognised value is a hard 400, never silently coerced.
+ * Mirrors `log_entries.category`'s CHECK constraint.
+ */
+const logCategory = z.enum(["learned", "shipped", "working"], {
+  errorMap: () => ({ message: "category must be one of: learned, shipped, working" }),
+});
+
+/**
  * Body schema for `POST /api/log`. Text is stored verbatim (as plain text) and
  * escaped by the frontend on render — never treated as HTML here.
  */
@@ -51,6 +60,7 @@ export const newLogEntrySchema = z.object({
   // clear one). Otherwise a URL from POST /api/log/upload.
   imageUrl: z.union([z.literal(""), httpsAllowlistedUrl]).default(""),
   tags: z.array(tag).max(8, "at most 8 tags").default([]),
+  category: logCategory,
 });
 
 export type NewLogEntryInput = z.infer<typeof newLogEntrySchema>;

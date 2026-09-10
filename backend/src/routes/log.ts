@@ -23,7 +23,9 @@ const upload = multer({
 
 /**
  * GET /api/log  (public)
- * Response: { entries: LogEntry[] } — newest first.
+ * Response: { entries: LogEntry[] } — newest first, every entry carrying its
+ * `category` ('learned' | 'shipped' | 'working'). The frontend groups them
+ * into the three Log columns; the ordering here is preserved within each group.
  * Served from the Redis cache when warm; a cache miss/error falls through to
  * Postgres (fail open).
  */
@@ -44,8 +46,10 @@ logRouter.get("/", async (_req, res, next) => {
 
 /**
  * POST /api/log  (admin)
- * Body: { title, description, date, imageUrl, tags } — validated server-side.
- * Inserts one row, invalidates the cache, echoes { entry: LogEntry }.
+ * Body: { title, description, date, imageUrl, tags, category } — validated
+ * server-side. `category` is required and must be one of 'learned' | 'shipped'
+ * | 'working' (400 otherwise). Inserts one row, invalidates the cache, echoes
+ * { entry: LogEntry }.
  */
 logRouter.post("/", requireAdmin, async (req, res, next) => {
   try {
@@ -59,6 +63,7 @@ logRouter.post("/", requireAdmin, async (req, res, next) => {
       date: parsed.data.date,
       imageUrl: parsed.data.imageUrl,
       tags: parsed.data.tags,
+      category: parsed.data.category,
     });
     await invalidateList();
     res.status(201).json({ entry });
@@ -92,6 +97,7 @@ logRouter.put("/:id", requireAdmin, async (req, res, next) => {
       date: parsed.data.date,
       imageUrl: parsed.data.imageUrl,
       tags: parsed.data.tags,
+      category: parsed.data.category,
     });
     if (!entry) throw notFound("Unknown entry");
     await invalidateList();

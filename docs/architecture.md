@@ -225,11 +225,15 @@ Two shapes are used, deliberately:
 | `note` | text, nullable | |
 | `sort_order` | int | |
 
-### `log_entries` (existing, unchanged)
+### `log_entries` (existing)
 
-`id`, `title`, `description`, `date`, `image_url`, `tags`, `created_at`. Listed here for
-completeness — this table predates the rest of the content model and its shape does not
-change.
+`id`, `title`, `description`, `date`, `image_url`, `tags`, `category`, `created_at`. This
+table predates the rest of the content model. `category` (migration `005`) is a `text`
+column with a CHECK constraint of exactly `'learned' | 'shipped' | 'working'` — it names
+which of the public Log page's three columns (Learned | Shipped | Working on) the entry
+appears in. It was added with a `'learned'` default so existing rows backfilled in the
+same migration; the default is then dropped, so new rows must set it explicitly (the API
+requires it).
 
 > **Design tokens, layout components, and the navigation structure are not part of this
 > data model and are not part of this data flow.** Nothing in Postgres describes a
@@ -594,7 +598,7 @@ guards every one.
 1. Browser sends:
        POST https://<backend>/api/log
        Content-Type: application/json     credentials: 'include'
-       body: { title, description, date, imageUrl, tags }
+       body: { title, description, date, imageUrl, tags, category }
 2. Backend /api/log handler:
      a. Auth middleware: valid sid session, else 401. Stop.
      b. Validate + sanitize every field (shared schema):
@@ -602,9 +606,11 @@ guards every one.
           - description: required, trimmed, max length, stored as PLAIN TEXT
                          (rendered escaped by the frontend, never as raw HTML)
           - date:        valid ISO date, not absurdly in the future
-          - imageUrl:    required, https, host must be on the blob-storage
-                         allowlist
+          - imageUrl:    optional (may be ""); if set, https + blob-storage
+                         allowlist (or the local-driver /uploads path in dev)
           - tags:        array of short slug strings, capped count + length
+          - category:    required, exactly 'learned' | 'shipped' | 'working'
+                         (400 otherwise — no default)
      c. INSERT one row into log_entries via a parameterized query.
      d. Invalidate the Log cache in Redis:  DEL cache:log:list
      e. Respond 201 { entry }.
