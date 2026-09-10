@@ -3,6 +3,10 @@ dist/
 .env
 .env.*
 !.env.example
+# Any *.env file — e.g. .migrate.env, a local-only file holding the production
+# DATABASE_URL for one-off migrations. Never commit a live credential.
+*.env
+.migrate.env
 *.log
 .DS_Store
 coverage/
