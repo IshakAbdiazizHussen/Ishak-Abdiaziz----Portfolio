@@ -26,12 +26,26 @@ create table if not exists toolbox_items (
 
 create index if not exists toolbox_items_group_idx on toolbox_items (group_id, sort_order);
 
+-- Natural keys: a group name is unique, and an item name is unique within its
+-- group. These UNIQUE constraints (also added standalone by migration 006 for
+-- databases already past this point) are what let the seed inserts below use
+-- ON CONFLICT, so re-running this file is a no-op instead of duplicating every
+-- group and item. Guarded so this file stays re-runnable.
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'toolbox_groups_name_key') then
+    alter table toolbox_groups add constraint toolbox_groups_name_key unique (name);
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'toolbox_items_group_name_key') then
+    alter table toolbox_items add constraint toolbox_items_group_name_key unique (group_id, name);
+  end if;
+end $$;
+
 insert into toolbox_groups (name, sort_order) values
   ('Frontend', 1),
   ('Backend', 2),
   ('AI / ML', 3),
   ('Infra', 4)
-on conflict do nothing;
+on conflict (name) do nothing;
 
 insert into toolbox_items (group_id, name, note, sort_order)
 select g.id, i.name, i.note, i.sort_order
@@ -43,7 +57,8 @@ cross join (
     ('Tailwind CSS', 'Styling without a separate design system to maintain', 3),
     ('HTMX', 'When a server-rendered app does not need a SPA', 4)
 ) as i(name, note, sort_order)
-where g.name = 'Frontend';
+where g.name = 'Frontend'
+on conflict (group_id, name) do nothing;
 
 insert into toolbox_items (group_id, name, note, sort_order)
 select g.id, i.name, i.note, i.sort_order
@@ -55,7 +70,8 @@ cross join (
     ('PostgreSQL', 'Primary store; run traces, records, migrations', 3),
     ('Redis', 'Caching fetched sources, queues, rate limits', 4)
 ) as i(name, note, sort_order)
-where g.name = 'Backend';
+where g.name = 'Backend'
+on conflict (group_id, name) do nothing;
 
 insert into toolbox_items (group_id, name, note, sort_order)
 select g.id, i.name, i.note, i.sort_order
@@ -67,7 +83,8 @@ cross join (
     ('scikit-learn', 'Baselines, metrics, confusion matrices', 3),
     ('LLM tool-calling', 'Structured outputs, retrieval, verification passes', 4)
 ) as i(name, note, sort_order)
-where g.name = 'AI / ML';
+where g.name = 'AI / ML'
+on conflict (group_id, name) do nothing;
 
 insert into toolbox_items (group_id, name, note, sort_order)
 select g.id, i.name, i.note, i.sort_order
@@ -79,4 +96,5 @@ cross join (
     ('pytest', 'API contract tests and evaluation harnesses', 3),
     ('Linux / nginx', 'Deploys, reverse proxy, log reading', 4)
 ) as i(name, note, sort_order)
-where g.name = 'Infra';
+where g.name = 'Infra'
+on conflict (group_id, name) do nothing;

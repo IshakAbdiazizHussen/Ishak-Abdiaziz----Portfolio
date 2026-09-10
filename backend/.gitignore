@@ -7,6 +7,8 @@ dist/
 # DATABASE_URL for one-off migrations. Never commit a live credential.
 *.env
 .migrate.env
+# Local-only dumps of production tables taken before a manual data fix.
+.prod-backup/
 *.log
 .DS_Store
 coverage/

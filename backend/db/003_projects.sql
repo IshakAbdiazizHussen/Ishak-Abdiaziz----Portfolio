@@ -41,6 +41,17 @@ create table if not exists project_stats (
 
 create index if not exists project_stats_project_idx on project_stats (project_id, sort_order);
 
+-- A project has at most one stat per label. This UNIQUE constraint (also added
+-- standalone by migration 006 for databases already past this point) is what
+-- lets the seed insert below use ON CONFLICT, so re-running this file is a
+-- no-op instead of duplicating every stat. Guarded so this file stays re-runnable.
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'project_stats_project_label_key') then
+    alter table project_stats
+      add constraint project_stats_project_label_key unique (project_id, label);
+  end if;
+end $$;
+
 insert into projects (
   slug, name, lead, stack, hook, what_it_does, stats_label,
   demo_url, demo_label, source_url, sort_order
@@ -73,10 +84,8 @@ insert into projects (
   )
 on conflict (slug) do nothing;
 
--- Migrations only ever run once (schema_migrations tracks applied files), so
--- there is no real re-run risk here — these inserts are not additionally
--- conflict-guarded because project_stats has no natural unique key to guard
--- on beyond its own generated id.
+-- ON CONFLICT on the (project_id, label) constraint added above: re-running
+-- this file skips stats that already exist instead of duplicating them.
 insert into project_stats (project_id, label, value, accent, sort_order)
 select p.id, s.label, s.value, s.accent, s.sort_order
 from projects p
@@ -86,7 +95,8 @@ cross join (
     ('Macro F1', '0.78', false, 2),
     ('Classes', '10', false, 3)
 ) as s(label, value, accent, sort_order)
-where p.slug = 'ai-image-classifier';
+where p.slug = 'ai-image-classifier'
+on conflict (project_id, label) do nothing;
 
 insert into project_stats (project_id, label, value, accent, sort_order)
 select p.id, s.label, s.value, s.accent, s.sort_order
@@ -97,4 +107,5 @@ cross join (
     ('Citations', 'Linked', false, 2),
     ('Resumable', 'Yes', false, 3)
 ) as s(label, value, accent, sort_order)
-where p.slug = 'research-agent';
+where p.slug = 'research-agent'
+on conflict (project_id, label) do nothing;
