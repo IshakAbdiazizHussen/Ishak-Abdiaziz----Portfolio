@@ -116,7 +116,9 @@
   font-weight: 500;
   border: var(--border-width) solid var(--accent-warm);
   border-radius: var(--radius);
-  transition: background-color 150ms ease-out, color 150ms ease-out;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
 }
 
 .cta {
@@ -184,6 +186,10 @@
 }
 
 .miniValue {
+  /* The browser's default <dd> margin (~40px inline-start) is otherwise
+     unreset here, so the value sits indented under its own label instead of
+     lining up with it. */
+  margin: 0;
   font-family: var(--font-mono-stack);
   font-size: var(--text-md);
   font-weight: 600;
