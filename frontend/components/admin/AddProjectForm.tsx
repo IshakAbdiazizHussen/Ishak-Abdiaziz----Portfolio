@@ -6,14 +6,26 @@ import { createProject, NotAuthenticatedError, type NewProjectInput } from "@/li
 import { SavedIndicator, type SaveStatus } from "./SavedIndicator";
 import styles from "./ProjectEditor.module.css";
 
-const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,59}$/;
+/**
+ * The backend requires a `slug` (its permanent identifier — a Log-style
+ * `newProjectSchema` field, `^[a-z0-9][a-z0-9-]{0,59}$`), but there's no
+ * reason to make the owner type one by hand: it's derived from Name here,
+ * the same way a CMS turns a title into a URL slug automatically.
+ */
+function slugify(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60)
+    .replace(/-+$/g, "");
+}
 
 /**
  * "+ Add a new project" — creates a brand-new row via `POST /api/projects`.
  * Deliberately styled and laid out exactly like `ProjectEditor`'s edit form
- * (same CSS module, same field set) rather than a separate design, plus one
- * extra field — Slug — which only exists at creation time; it's the row's
- * permanent identifier and isn't editable afterward.
+ * (same CSS module, same field set) rather than a separate design.
  *
  * The new project has no stats yet (constraint C18 — there's nothing yet
  * stored to confirm a stat against). After creation this form resets and the
@@ -33,7 +45,6 @@ export function AddProjectForm({
 }) {
   const uid = useId();
 
-  const [slug, setSlug] = useState("");
   const [name, setName] = useState("");
   const [lead, setLead] = useState(false);
   const [stackRaw, setStackRaw] = useState("");
@@ -48,7 +59,6 @@ export function AddProjectForm({
   const [message, setMessage] = useState("");
 
   function reset() {
-    setSlug("");
     setName("");
     setLead(false);
     setStackRaw("");
@@ -64,15 +74,15 @@ export function AddProjectForm({
     e.preventDefault();
     if (status === "working") return;
 
-    const trimmedSlug = slug.trim().toLowerCase();
-    if (!SLUG_RE.test(trimmedSlug)) {
-      setStatus("error");
-      setMessage("Slug must be lowercase letters, numbers, and hyphens (e.g. my-new-project).");
-      return;
-    }
     if (!name.trim() || !hook.trim() || !whatItDoes.trim() || !statsLabel.trim()) {
       setStatus("error");
       setMessage("Name, hook, what-it-does, and the stats label are required.");
+      return;
+    }
+    const trimmedSlug = slugify(name);
+    if (!trimmedSlug) {
+      setStatus("error");
+      setMessage("Name needs at least one letter or number to generate an identifier from.");
       return;
     }
     if (!demoUrl.trim() || !sourceUrl.trim()) {
@@ -127,16 +137,6 @@ export function AddProjectForm({
 
       <form className={styles.form} onSubmit={onSubmit} noValidate>
         <fieldset className={styles.fieldset} disabled={busy}>
-          <div className={styles.field}>
-            <label htmlFor={`${uid}-slug`}>Slug</label>
-            <input
-              id={`${uid}-slug`}
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              placeholder="e.g. my-new-project"
-            />
-          </div>
-
           <div className={styles.field}>
             <label htmlFor={`${uid}-name`}>Name</label>
             <input id={`${uid}-name`} value={name} onChange={(e) => setName(e.target.value)} />
