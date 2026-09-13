@@ -98,16 +98,6 @@ export const projects: Project[] = [
       "(PDF, Word, or plain text), then ask questions about their content in natural " +
       "language. Every answer includes a citation back to the exact page and passage it " +
       "came from.",
-    decision:
-      "Most RAG systems quietly blend retrieved document content with the model's own " +
-      "general knowledge, which produces a confident-sounding answer that is not " +
-      "actually grounded in the source. This system's prompt instructs the model to " +
-      "answer only from the retrieved context and to refuse — stating plainly that the " +
-      "information isn't available — when the uploaded document doesn't cover the " +
-      "question, rather than guessing. Verified directly: asking an out-of-scope " +
-      'question ("how nuclear power works") against a document about business topics ' +
-      'correctly returned "The information is not available in the provided ' +
-      'documents," instead of a fabricated answer.',
     // No measured accuracy/performance number exists for this project (constraint
     // C11) — these are honest, verified behavioral facts, the same pattern
     // Research-Agent above already uses instead of a fabricated percentage.

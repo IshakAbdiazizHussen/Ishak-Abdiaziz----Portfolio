@@ -14,7 +14,7 @@
 -- file against a database that already has this project is a no-op.
 
 insert into projects (
-  slug, name, lead, stack, hook, what_it_does, decision, stats_label,
+  slug, name, lead, stack, hook, what_it_does, stats_label,
   demo_url, demo_label, source_url, sort_order
 ) values (
   'ai-document-assistant',
@@ -23,7 +23,6 @@ insert into projects (
   array['FastAPI', 'ChromaDB', 'OpenAI', 'Next.js'],
   'Upload a document, ask it a question in plain English — it answers only from what''s actually in the file, and says so honestly when it isn''t.',
   'A RAG (retrieval-augmented generation) system that lets a user upload documents (PDF, Word, or plain text), then ask questions about their content in natural language. Every answer includes a citation back to the exact page and passage it came from.',
-  'Most RAG systems quietly blend retrieved document content with the model''s own general knowledge, which produces a confident-sounding answer that is not actually grounded in the source. This system''s prompt instructs the model to answer only from the retrieved context and to refuse — stating plainly that the information isn''t available — when the uploaded document doesn''t cover the question, rather than guessing. Verified directly: asking an out-of-scope question ("how nuclear power works") against a document about business topics correctly returned "The information is not available in the provided documents," instead of a fabricated answer.',
   'Verified behavior',
   'https://ai-document-assistant-2y3c.vercel.app',
   'Try it live',
