@@ -218,6 +218,39 @@ export async function getProjects(): Promise<Project[]> {
   return res.projects;
 }
 
+export interface NewProjectInput {
+  slug: string;
+  name: string;
+  lead?: boolean;
+  stack?: string[];
+  hook: string;
+  whatItDoes: string;
+  statsLabel: string;
+  demoUrl: string;
+  demoLabel?: string;
+  sourceUrl: string;
+  sortOrder?: number;
+}
+
+/**
+ * `POST /api/projects` — creates a brand-new project row. Stats are not part
+ * of this call (there's nothing to confirm-before-save against yet, per
+ * C18) — add them afterward with `createStat` once the project exists.
+ */
+export async function createProject(input: NewProjectInput): Promise<Project> {
+  try {
+    const res = await backendFetch<{ project: Project }>("/api/projects", {
+      auth: true,
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    return res.project;
+  } catch (err) {
+    mapAuthed(err);
+  }
+}
+
 export interface UpdateProjectFields {
   name?: string;
   lead?: boolean;

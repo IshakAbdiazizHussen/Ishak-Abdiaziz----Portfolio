@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { AddProjectForm } from "@/components/admin/AddProjectForm";
 import { AdminSectionHeader } from "@/components/admin/AdminSectionHeader";
 import { ProjectEditor } from "@/components/admin/ProjectEditor";
 import { getProjects } from "@/lib/admin";
@@ -31,9 +32,16 @@ export default function AdminBuiltPage() {
       ) : !projects ? (
         <p className={styles.notice}>Loading…</p>
       ) : (
-        projects.map((project) => (
-          <ProjectEditor key={project.id} project={project} onSessionExpired={signalExpired} />
-        ))
+        <>
+          {projects.map((project) => (
+            <ProjectEditor key={project.id} project={project} onSessionExpired={signalExpired} />
+          ))}
+          <AddProjectForm
+            nextSortOrder={projects.length + 1}
+            onCreated={load}
+            onSessionExpired={signalExpired}
+          />
+        </>
       )}
     </div>
   );
