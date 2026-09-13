@@ -25,7 +25,7 @@ function isUuid(value: string | undefined): value is string {
 
 /**
  * GET /api/projects  (public)
- * Both projects with their stats, ordered by sort_order. Served from the
+ * All projects with their stats, ordered by sort_order. Served from the
  * Redis cache when warm; a miss/error falls through to Postgres (fail open)
  * — same pattern as GET /api/log and GET /api/content/:area.
  */
@@ -46,9 +46,11 @@ projectsRouter.get("/", async (_req, res, next) => {
 
 /**
  * POST /api/projects  (admin)
- * Creates a project row. The NUMBER of projects on the site is a product
- * constraint enforced by policy (docs/constraints.md C8), not by this
- * endpoint.
+ * Creates a project row. How many projects appear on the Built page is an
+ * editorial judgment call — quality over quantity, each one clearing the
+ * same bar as the rest (docs/project-definition.md) — not a technical limit
+ * this endpoint enforces. (Not to be confused with constraint C8, which
+ * locks the six-page *nav*, not the project count within the Built page.)
  */
 projectsRouter.post("/", requireAdmin, async (req, res, next) => {
   try {

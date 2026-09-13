@@ -86,6 +86,41 @@ export const projects: Project[] = [
     demoLabel: "Try it live",
     sourceUrl: "https://github.com/IshakAbdiazizHussen/Research-Agent-",
   },
+  {
+    slug: "ai-document-assistant",
+    name: "Ai-Document-Assistant",
+    stack: ["FastAPI", "ChromaDB", "OpenAI", "Next.js"],
+    hook:
+      "Upload a document, ask it a question in plain English — it answers only from " +
+      "what's actually in the file, and says so honestly when it isn't.",
+    whatItDoes:
+      "A RAG (retrieval-augmented generation) system that lets a user upload documents " +
+      "(PDF, Word, or plain text), then ask questions about their content in natural " +
+      "language. Every answer includes a citation back to the exact page and passage it " +
+      "came from.",
+    decision:
+      "Most RAG systems quietly blend retrieved document content with the model's own " +
+      "general knowledge, which produces a confident-sounding answer that is not " +
+      "actually grounded in the source. This system's prompt instructs the model to " +
+      "answer only from the retrieved context and to refuse — stating plainly that the " +
+      "information isn't available — when the uploaded document doesn't cover the " +
+      "question, rather than guessing. Verified directly: asking an out-of-scope " +
+      'question ("how nuclear power works") against a document about business topics ' +
+      'correctly returned "The information is not available in the provided ' +
+      'documents," instead of a fabricated answer.',
+    // No measured accuracy/performance number exists for this project (constraint
+    // C11) — these are honest, verified behavioral facts, the same pattern
+    // Research-Agent above already uses instead of a fabricated percentage.
+    statsLabel: "Verified behavior",
+    stats: [
+      { label: "Grounding", value: "Strict", accent: true },
+      { label: "Refuses", value: "Yes" },
+      { label: "Citations", value: "Linked" },
+    ],
+    demoUrl: "https://ai-document-assistant-2y3c.vercel.app",
+    demoLabel: "Try it live",
+    sourceUrl: "https://github.com/IshakAbdiazizHussen/Ai-Document-Assistant",
+  },
 ];
 
 export const builtNext = {
@@ -96,9 +131,9 @@ export const builtNext = {
 
 export const builtHeader = {
   kicker: "Built",
-  title: "Two projects I can defend line by line",
+  title: "Three projects I can defend line by line",
   sub:
-    "Both are deployed and open. Every number below comes from a held-out evaluation " +
-    "I can reproduce on request; where I have not measured something, I say so instead " +
-    "of estimating.",
+    "All three are deployed and open. Every number below comes from a held-out " +
+    "evaluation I can reproduce on request; where I have not measured something, I say " +
+    "so instead of estimating.",
 };

@@ -9,8 +9,9 @@ import styles from "./built.module.css";
 export const metadata: Metadata = {
   title: "Built",
   description:
-    "Two deployed projects — a PyTorch image classifier with production guardrails, and " +
-    "a self-correcting LangGraph web research agent.",
+    "Three deployed projects — a PyTorch image classifier with production guardrails, " +
+    "a self-correcting LangGraph web research agent, and a RAG document assistant that " +
+    "refuses to answer beyond what its source documents actually say.",
 };
 
 export default async function BuiltPage() {

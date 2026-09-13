@@ -702,8 +702,8 @@ is auth-only.
 | `GET` | `/api/content/:area` | — | Read simple content for one area: `intro`, `how-i-got-here`, `lets-talk` (§4/§7) |
 | `PUT` | `/api/content/:area` | ✅ | Write simple content fields for one area (§7) |
 | `POST` | `/api/content/upload` | ✅ | Upload an image for a content field (Intro hero photo, How I Got Here photo); returns `{ imageUrl }` (§7) |
-| `GET` | `/api/projects` | — | Read both projects with their stats (§4/§8) |
-| `POST` | `/api/projects` | ✅ | Create a project row *(count is a product constraint enforced by policy, not by this endpoint — see `docs/constraints.md`)* |
+| `GET` | `/api/projects` | — | Read all projects with their stats (§4/§8) |
+| `POST` | `/api/projects` | ✅ | Create a project row *(how many appear is an editorial call — quality over quantity, `docs/project-definition.md` — not a limit this endpoint enforces)* |
 | `PUT` | `/api/projects/:id` | ✅ | Update a project's non-stat fields (§8) |
 | `POST` | `/api/projects/:id/stats` | ✅ | Add a stat to a project — **confirm-before-save required in the admin UI** (§8) |
 | `PUT` | `/api/projects/:id/stats/:statId` | ✅ | Edit a stat's label/value/note — **confirm-before-save required in the admin UI** (§8) |

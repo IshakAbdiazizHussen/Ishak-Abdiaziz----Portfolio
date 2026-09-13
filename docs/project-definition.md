@@ -59,8 +59,11 @@ Site headline (used verbatim on the Intro hero):
 - **Sales document, not a showcase.** A showcase optimizes for completeness. A sales
   document optimizes for the decision you want the reader to make. This site optimizes
   for "book the interview."
-- **Quality over quantity.** Two deployed projects described deeply beats ten
-  half-explained repos. Two is enough to prove the pattern (ships products + real ML).
+- **Quality over quantity.** Three deployed projects described deeply beats ten
+  half-explained repos. The point was never "more is better" — it's that a project only
+  earns a place here by clearing the same bar as the ones already on the page: a real
+  deployed product, one hard technical decision told honestly, and stats that are either
+  measured or explicitly not claimed (constraint C11).
 - **Verified claims over hype.** Every performance claim on the site is a real measured
   number from a real run, and weak numbers are shown next to strong ones. A skeptical
   engineer should trust the author *more* for the honesty, not less.
@@ -124,9 +127,9 @@ configure — is accepted deliberately and is documented in `docs/architecture.m
 - The backend is the only thing that talks to Postgres, Redis, blob storage, and the
   email provider.
 
-## The two featured projects
+## The three featured projects
 
-Both are real, deployed, and linked to live demos and source.
+All three are real, deployed, and linked to live demos and source.
 
 ### 1. Ai-image-classifier — flagship / lead project
 
@@ -169,6 +172,32 @@ A web research agent built on **LangGraph** with a cyclic, stateful flow:
 The story it tells: this person can design non-trivial control flow (cycles, state,
 self-correction, resumability), not just linear prompt chains.
 
+### 3. Ai-Document-Assistant
+
+A RAG (retrieval-augmented generation) system built on **FastAPI**, **ChromaDB**, and
+**OpenAI**, with a **Next.js** frontend: upload a document (PDF, Word, or plain text),
+ask a question about it in natural language, get an answer with a citation back to the
+exact page and passage it came from.
+
+- **Answers only from retrieved context, never blended with general knowledge** — most
+  RAG systems quietly fill gaps with the model's own knowledge, producing a
+  confident-sounding answer that isn't actually grounded in the source document. This
+  system's prompt explicitly forbids that.
+- **Refuses honestly instead of guessing** — when the uploaded document doesn't cover
+  the question, it says the information isn't available rather than fabricating an
+  answer.
+- **Verified, not assumed** — asking an out-of-scope question ("how nuclear power
+  works") against a document about business topics correctly returned "The information
+  is not available in the provided documents."
+- **No fabricated stats.** This project has no measured accuracy/performance number to
+  report, so — the same way Research-Agent above reports qualitative behavior instead of
+  a percentage — its stats panel shows verified behavioral facts (grounding, refusal,
+  citation-linking), not an invented metric (constraint C11).
+
+The story it tells: this person treats a model confidently making things up as a design
+problem to engineer around, not an unavoidable cost of using an LLM — and says plainly
+where something hasn't been measured, rather than inventing a number to fill the gap.
+
 ## Site structure — the locked 6-page layout
 
 Six top-level nav items, in this order, each its own page. This structure is fixed. New
@@ -177,7 +206,7 @@ features must fit one of these pages or they do not get built.
 | Nav label | Purpose (one line) |
 | --- | --- |
 | **Intro** | Landing page: hero with photo, the verbatim headline, and an animated looping tech-stack marquee — make the visitor stop scrolling. |
-| **Built** | The two featured projects, each as hook → what it does → one hard technical decision as a story → real stats → live demo link. |
+| **Built** | The three featured projects, each as hook → what it does → one hard technical decision as a story → real stats → live demo link. |
 | **How I Got Here** | A short, human background story — how the author got into this work. Not a full resume. |
 | **Toolbox** | A short, honest, grouped list of technologies actually used (Frontend / Backend / AI-ML / Infra). No inflated logo wall. |
 | **Log** | Milestone entries (image, title, short description, date), added by the single owner via a password-gated admin form, shown in three columns — Learned, Shipped, Working on — each newest-first. |

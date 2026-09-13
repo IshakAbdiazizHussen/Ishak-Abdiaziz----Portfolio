@@ -25,7 +25,7 @@ export default function AdminBuiltPage() {
 
   return (
     <div>
-      <AdminSectionHeader title="Built" intro="The two projects, their fields, and their stats." />
+      <AdminSectionHeader title="Built" intro="The projects, their fields, and their stats." />
       {loadError ? (
         <p className={styles.error}>{loadError}</p>
       ) : !projects ? (

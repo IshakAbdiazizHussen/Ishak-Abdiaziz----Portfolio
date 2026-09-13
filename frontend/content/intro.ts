@@ -38,8 +38,10 @@ export const intro = {
   ],
   next: {
     kicker: "Next",
-    title: "Two projects, with the numbers attached",
-    sub: "Ai-image-classifier and Research-Agent — what they do, and one hard call in each.",
+    title: "Three projects, with the numbers attached",
+    sub:
+      "Ai-image-classifier, Research-Agent, and Ai-Document-Assistant — what they do, " +
+      "and one hard call in each.",
     href: "/built",
   },
 } as const;

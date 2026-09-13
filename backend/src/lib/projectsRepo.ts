@@ -181,9 +181,10 @@ export interface NewProjectFields {
 }
 
 /**
- * Create a project row. The NUMBER of projects on the site is a product
- * constraint enforced by policy (docs/constraints.md C8), not by this
- * function or its route — this only inserts what it's given.
+ * Create a project row. How many projects appear on the Built page is an
+ * editorial judgment call (docs/project-definition.md: quality over
+ * quantity), not a technical limit this function or its route enforces —
+ * this only inserts what it's given.
  */
 export async function createProject(input: NewProjectFields): Promise<Project> {
   const rows = await sql<ProjectRow[]>`
